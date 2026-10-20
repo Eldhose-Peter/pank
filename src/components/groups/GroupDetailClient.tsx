@@ -42,13 +42,13 @@ interface MemberData {
 }
 
 interface ExpensePayment {
-  id: string;
+  id?: string;
   groupMemberId: string;
   amountPaid: number;
 }
 
 interface ExpenseSplit {
-  id: string;
+  id?: string;
   groupMemberId: string;
   owedAmount: number;
   splitValue?: number;
@@ -57,7 +57,7 @@ interface ExpenseSplit {
 interface ExpenseItem {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   amount: number;
   currency: string;
   splitType: string;
@@ -72,8 +72,8 @@ interface SettlementItem {
   payeeMemberId: string;
   amount: number;
   currency: string;
-  paymentMethod?: string;
-  notes?: string;
+  paymentMethod?: string | null;
+  notes?: string | null;
   settledAt: string;
 }
 
@@ -107,6 +107,9 @@ interface GroupDetailClientProps {
   groupId: string;
   initialGroup: GroupData;
   initialMembers: MemberData[];
+  initialExpenses?: ExpenseItem[];
+  initialBalances?: BalancesSummary | null;
+  initialSettlements?: SettlementItem[];
   currentUserId: string;
 }
 
@@ -114,15 +117,18 @@ export function GroupDetailClient({
   groupId,
   initialGroup,
   initialMembers,
+  initialExpenses = [],
+  initialBalances = null,
+  initialSettlements = [],
   currentUserId,
 }: GroupDetailClientProps) {
   const router = useRouter();
   const [group, setGroup] = useState<GroupData>(initialGroup);
   const [members, setMembers] = useState<MemberData[]>(initialMembers);
-  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
-  const [balances, setBalances] = useState<BalancesSummary | null>(null);
-  const [settlements, setSettlements] = useState<SettlementItem[]>([]);
-  const [loadingExtras, setLoadingExtras] = useState(true);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(initialExpenses);
+  const [balances, setBalances] = useState<BalancesSummary | null>(initialBalances);
+  const [settlements, setSettlements] = useState<SettlementItem[]>(initialSettlements);
+  const [loadingExtras, setLoadingExtras] = useState(!initialBalances);
 
   // Active Tab: 'expenses' | 'balances' | 'settlements' | 'members'
   const [activeTab, setActiveTab] = useState<'expenses' | 'balances' | 'settlements' | 'members'>('expenses');
@@ -145,30 +151,30 @@ export function GroupDetailClient({
 
   const loadAllData = async () => {
     try {
-      // 1. Group & Members refresh
-      const groupRes = await fetch(`/api/groups/${groupId}`);
+      setLoadingExtras(true);
+      const [groupRes, expRes, balRes, setRes] = await Promise.all([
+        fetch(`/api/groups/${groupId}`),
+        fetch(`/api/groups/${groupId}/expenses`),
+        fetch(`/api/groups/${groupId}/balances`),
+        fetch(`/api/groups/${groupId}/settlements`),
+      ]);
+
       if (groupRes.ok) {
         const groupData = await groupRes.json();
         setGroup(groupData.group);
         setMembers(groupData.members || []);
       }
 
-      // 2. Expenses
-      const expRes = await fetch(`/api/groups/${groupId}/expenses`);
       if (expRes.ok) {
         const expData = await expRes.json();
         setExpenses(expData.expenses || []);
       }
 
-      // 3. Balances
-      const balRes = await fetch(`/api/groups/${groupId}/balances`);
       if (balRes.ok) {
         const balData = await balRes.json();
         setBalances(balData);
       }
 
-      // 4. Settlements
-      const setRes = await fetch(`/api/groups/${groupId}/settlements`);
       if (setRes.ok) {
         const setData = await setRes.json();
         setSettlements(setData.settlements || []);
@@ -181,7 +187,9 @@ export function GroupDetailClient({
   };
 
   useEffect(() => {
-    loadAllData();
+    if (!initialBalances) {
+      loadAllData();
+    }
   }, [groupId]);
 
   const handleDeleteExpense = async (expenseId: string) => {
@@ -373,7 +381,27 @@ export function GroupDetailClient({
       {/* Tab 1: Expenses */}
       {activeTab === 'expenses' && (
         <div className="mt-6 space-y-3">
-          {expenses.length === 0 ? (
+          {loadingExtras && expenses.length === 0 ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 rounded bg-zinc-200 dark:bg-zinc-800" />
+                        <div className="h-3 w-48 rounded bg-zinc-100 dark:bg-zinc-800" />
+                      </div>
+                    </div>
+                    <div className="h-5 w-20 rounded bg-zinc-200 dark:bg-zinc-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : expenses.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
               <Receipt className="mx-auto h-8 w-8 text-zinc-400" />
               <h3 className="mt-2 text-sm font-semibold text-zinc-900 dark:text-white">No expenses recorded yet</h3>
@@ -499,7 +527,11 @@ export function GroupDetailClient({
               </div>
             </div>
 
-            {balances?.simplifiedDebts.length === 0 ? (
+            {loadingExtras && !balances ? (
+              <div className="mt-3 animate-pulse rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900">
+                Calculating balances and debts...
+              </div>
+            ) : balances?.simplifiedDebts.length === 0 ? (
               <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
                 All debts are settled! No payments are owed.
               </div>
@@ -615,7 +647,15 @@ export function GroupDetailClient({
             </button>
           </div>
 
-          {settlements.length === 0 ? (
+          {loadingExtras && settlements.length === 0 ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="animate-pulse rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                  <div className="h-10 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+                </div>
+              ))}
+            </div>
+          ) : settlements.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
               <Handshake className="mx-auto h-8 w-8 text-zinc-400" />
               <h3 className="mt-2 text-sm font-semibold text-zinc-900 dark:text-white">No settlements recorded yet</h3>

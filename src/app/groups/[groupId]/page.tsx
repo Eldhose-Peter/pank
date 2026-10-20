@@ -3,6 +3,9 @@ import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { GroupService } from '@/modules/groups/service';
+import { ExpenseService } from '@/modules/expenses/service';
+import { BalanceService } from '@/modules/accounting/service';
+import { SettlementService } from '@/modules/settlements/service';
 import { GroupDetailClient } from '@/components/groups/GroupDetailClient';
 import Link from 'next/link';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
@@ -21,13 +24,26 @@ async function GroupPageContent({ params }: { params: Promise<{ groupId: string 
 
   try {
     const groupService = new GroupService(supabase);
-    const { group, members } = await groupService.getGroupWithMembers(user.id, groupId);
+    const expenseService = new ExpenseService(supabase);
+    const balanceService = new BalanceService(supabase);
+    const settlementService = new SettlementService(supabase);
+
+    const [{ group, members }, expenses, balances, settlements] = await Promise.all([
+      groupService.getGroupWithMembers(user.id, groupId),
+      expenseService.getExpenses(user.id, groupId),
+      balanceService.getGroupBalances(user.id, groupId),
+      settlementService.getSettlements(user.id, groupId),
+    ]);
 
     return (
       <GroupDetailClient
+        key={groupId}
         groupId={groupId}
         initialGroup={group}
         initialMembers={members}
+        initialExpenses={expenses}
+        initialBalances={balances}
+        initialSettlements={settlements}
         currentUserId={user.id}
       />
     );
