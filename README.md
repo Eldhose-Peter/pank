@@ -90,6 +90,24 @@ Detailed architectural blueprints, complete 12-table relational schema with Row 
 
 ---
 
+## Phase 4: UI and Testing (Completed)
+
+1. **Responsive Group Dashboard & Expense History**:
+   - Interactive group detail view (`/groups/[groupId]`) showing spending metrics, member rosters, settlements, and live expense ledger with multi-payer breakdowns.
+   - One-click debt settlement dialogs pre-filled with debtor, creditor, and simplified amounts.
+   - Shareable invitation link generation and redemption modal.
+2. **Conversational Expense Entry UI**:
+   - `AiExpenseModal`: Natural language expense entry with Gemini 2.5 Flash.
+   - Dynamic clarification prompt cards for resolving unknown names or adding placeholder friends on the fly.
+   - Interactive preview card displaying individual calculated shares and inline edit capabilities.
+   - Explicit confirmation action with idempotency protection.
+3. **Conversational Group Assistant UI**:
+   - `GroupAssistantModal`: Interactive chat answering queries regarding who owes whom, group spending, and settlement steps.
+4. **Integration & Edge-Case Testing**:
+   - 66 automated unit and integration tests across 14 test suites covering authorization guards, real-world multi-day trip accounting accuracy, debt minimization, and AI edge cases.
+
+---
+
 ## Getting Started
 
 ### 1. Prerequisites
@@ -122,7 +140,7 @@ supabase db push
 ```
 
 ### 4. Running Tests
-Run the Vitest test suite (56 unit tests covering split calculation, penny rounding, zero-sum balances, debt simplification, pairwise debts, Gemini AI expense extraction, member name resolution, and draft state machines):
+Run the Vitest test suite (66 unit & integration tests covering split calculation, penny rounding, zero-sum balances, debt minimization, authorization guards, real-world multi-day trip accounting, Gemini AI expense extraction, member name resolution, and draft state machines):
 ```bash
 npm test
 ```

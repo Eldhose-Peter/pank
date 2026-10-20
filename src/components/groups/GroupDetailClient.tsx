@@ -16,13 +16,17 @@ import {
   Calendar, 
   ChevronDown, 
   ChevronUp, 
-  CheckCircle2 
+  CheckCircle2,
+  Sparkles,
+  Bot
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 import { SettleUpModal } from '@/components/settlements/SettleUpModal';
 import { AddMemberModal } from '@/components/groups/AddMemberModal';
 import { InviteModal } from '@/components/groups/InviteModal';
+import { AiExpenseModal } from '@/components/ai/AiExpenseModal';
+import { GroupAssistantModal } from '@/components/ai/GroupAssistantModal';
 
 interface GroupData {
   id: string;
@@ -138,6 +142,8 @@ export function GroupDetailClient({
 
   // Modals state
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isAiExpenseOpen, setIsAiExpenseOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isSettleUpOpen, setIsSettleUpOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -264,6 +270,14 @@ export function GroupDetailClient({
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={() => setIsAiAssistantOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer"
+          >
+            <Bot className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            Ask AI
+          </button>
+
+          <button
             onClick={() => {
               setSettlePayerId(undefined);
               setSettlePayeeId(undefined);
@@ -286,10 +300,18 @@ export function GroupDetailClient({
 
           <button
             onClick={() => setIsAddExpenseOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            Add Expense
+            Add Manually
+          </button>
+
+          <button
+            onClick={() => setIsAiExpenseOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 transition-all cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            Fast AI Add
           </button>
         </div>
       </div>
@@ -780,6 +802,22 @@ export function GroupDetailClient({
         isOpen={isInviteOpen}
         onClose={() => setIsInviteOpen(false)}
         groupId={groupId}
+      />
+
+      <AiExpenseModal
+        isOpen={isAiExpenseOpen}
+        onClose={() => setIsAiExpenseOpen(false)}
+        groupId={groupId}
+        groupCurrency={group.currency}
+        members={members}
+        onExpenseAdded={loadAllData}
+      />
+
+      <GroupAssistantModal
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
+        groupId={groupId}
+        groupName={group.name}
       />
     </div>
   );

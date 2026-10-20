@@ -92,10 +92,11 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
             <span className="text-xs font-semibold uppercase tracking-wider">AI Assistant</span>
             <Sparkles className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="mt-2 text-sm font-bold text-zinc-900 dark:text-white">
-            Phase 3 Ready
+          <div className="mt-2 text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-amber-500" />
+            Gemini 2.5 Flash Enabled
           </div>
-          <p className="mt-1 text-xs text-zinc-500">Conversational natural language input</p>
+          <p className="mt-1 text-xs text-zinc-500">Natural language expense entry & chat</p>
         </div>
       </div>
 
