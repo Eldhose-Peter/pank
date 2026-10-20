@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { GroupService } from '@/modules/groups/service';
 import { LandingHero } from '@/components/home/LandingHero';
 import { UserDashboard } from '@/components/home/UserDashboard';
+import { DashboardSkeleton } from '@/components/home/DashboardSkeleton';
 
 async function HomeContent() {
   await connection();
@@ -48,7 +49,7 @@ async function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<LandingHero />}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <HomeContent />
     </Suspense>
   );
