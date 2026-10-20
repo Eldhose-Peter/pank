@@ -443,6 +443,28 @@ export type Database = {
         };
         Returns: Json;
       };
+      update_expense_transactional: {
+        Args: {
+          p_expense_id: string;
+          p_group_id: string;
+          p_title: string;
+          p_description: string;
+          p_amount: number;
+          p_currency: string;
+          p_split_type: string;
+          p_expense_date: string;
+          p_payments: Json;
+          p_splits: Json;
+        };
+        Returns: Json;
+      };
+      delete_expense_transactional: {
+        Args: {
+          p_expense_id: string;
+          p_group_id: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

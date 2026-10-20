@@ -1,0 +1,424 @@
+'use client';
+
+import { useState, useId } from 'react';
+import { 
+  X, 
+  Plus, 
+  Receipt, 
+  AlertCircle, 
+  Users, 
+  Calculator,
+  Check,
+  ChevronDown
+} from 'lucide-react';
+import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
+import { calculateSplits } from '@/modules/accounting/calculations';
+import type { SplitType } from '@/modules/accounting/types';
+
+interface GroupMember {
+  id: string;
+  displayName: string;
+  userId?: string | null;
+  role: string;
+}
+
+interface AddExpenseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  groupId: string;
+  members: GroupMember[];
+  currency: string;
+  currentMemberId?: string;
+  onExpenseAdded: () => void;
+}
+
+export function AddExpenseModal({
+  isOpen,
+  onClose,
+  groupId,
+  members,
+  currency,
+  currentMemberId,
+  onExpenseAdded,
+}: AddExpenseModalProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [amountInput, setAmountInput] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [splitType, setSplitType] = useState<SplitType>('equal');
+  const [paidByMemberId, setPaidByMemberId] = useState(currentMemberId || members[0]?.id || '');
+  
+  // Selected participants for split
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>(() => members.map((m) => m.id));
+  
+  // Custom split values (keyed by memberId): percentages, exact amounts, or shares
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  // Convert input string to minor units integer (paise/cents)
+  const minorAmount = Math.round(parseFloat(amountInput || '0') * 100);
+
+  // Compute live preview splits using domain accounting calculations
+  let calculatedSplitsPreview: { memberId: string; owedAmount: number }[] = [];
+  let splitValidationError: string | null = null;
+
+  if (minorAmount > 0 && selectedMemberIds.length > 0) {
+    try {
+      const participantInputs = selectedMemberIds.map((id) => {
+        const val = parseFloat(customValues[id] || '0');
+        return {
+          memberId: id,
+          splitValue: splitType === 'equal' ? 1 : val,
+        };
+      });
+
+      calculatedSplitsPreview = calculateSplits(
+        splitType,
+        minorAmount,
+        participantInputs
+      );
+    } catch (err: any) {
+      splitValidationError = err.message;
+    }
+  }
+
+  const toggleMemberSelection = (memberId: string) => {
+    setSelectedMemberIds((prev) => {
+      if (prev.includes(memberId)) {
+        if (prev.length === 1) return prev; // Keep at least one
+        return prev.filter((id) => id !== memberId);
+      } else {
+        return [...prev, memberId];
+      }
+    });
+  };
+
+  const handleCustomValueChange = (memberId: string, value: string) => {
+    setCustomValues((prev) => ({
+      ...prev,
+      [memberId]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!title.trim()) {
+      setError('Title is required');
+      return;
+    }
+
+    if (isNaN(minorAmount) || minorAmount <= 0) {
+      setError('Please enter a valid amount greater than 0');
+      return;
+    }
+
+    if (selectedMemberIds.length === 0) {
+      setError('Please select at least one person to split with');
+      return;
+    }
+
+    if (splitValidationError) {
+      setError(splitValidationError);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Prepare payload conforming to createExpenseSchema
+      const participants = selectedMemberIds.map((id) => {
+        const val = parseFloat(customValues[id] || '0');
+        let splitValue: number | undefined = undefined;
+        if (splitType === 'exact') {
+          splitValue = Math.round(val * 100); // minor units
+        } else if (splitType === 'percentage' || splitType === 'shares') {
+          splitValue = val;
+        }
+
+        return {
+          groupMemberId: id,
+          ...(splitValue !== undefined ? { splitValue } : {}),
+        };
+      });
+
+      const payload = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        amount: minorAmount,
+        currency,
+        splitType,
+        expenseDate: date,
+        paidByMemberId,
+        participants,
+      };
+
+      const res = await fetch(`/api/groups/${groupId}/expenses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save expense');
+      }
+
+      onExpenseAdded();
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const currencySymbol = getCurrencySymbol(currency);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
+      <div className="my-8 w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+              <Receipt className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+              Add Expense
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Description / Title *
+            </label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Dinner, Groceries, Hotel booking"
+              className="mt-1 block w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Amount ({currencySymbol}) *
+              </label>
+              <div className="relative mt-1">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-semibold text-zinc-400">
+                  {currencySymbol}
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  value={amountInput}
+                  onChange={(e) => setAmountInput(e.target.value)}
+                  placeholder="0.00"
+                  className="block w-full rounded-xl border border-zinc-300 bg-white pl-8 pr-3.5 py-2.5 text-sm text-zinc-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Date
+              </label>
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="mt-1 block w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* Paid By */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Paid by
+            </label>
+            <select
+              value={paidByMemberId}
+              onChange={(e) => setPaidByMemberId(e.target.value)}
+              className="mt-1 block w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+            >
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.displayName} {m.id === currentMemberId ? '(You)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Split Type Selector */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Split Type
+            </label>
+            <div className="mt-1 grid grid-cols-4 gap-2">
+              {(['equal', 'exact', 'percentage', 'shares'] as SplitType[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSplitType(type)}
+                  className={`rounded-xl py-2 text-xs font-semibold capitalize border transition-all ${
+                    splitType === type
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:border-indigo-500 dark:text-indigo-300'
+                      : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Participants & Values */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Split with ({selectedMemberIds.length} selected)
+              </label>
+              <button
+                type="button"
+                onClick={() => setSelectedMemberIds(members.map((m) => m.id))}
+                className="text-xs text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-medium"
+              >
+                Select all
+              </button>
+            </div>
+
+            <div className="mt-2 space-y-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+              {members.map((m) => {
+                const isSelected = selectedMemberIds.includes(m.id);
+                const preview = calculatedSplitsPreview.find((s) => s.memberId === m.id);
+
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
+                      isSelected ? 'bg-zinc-50 dark:bg-zinc-800/60' : 'opacity-60'
+                    }`}
+                  >
+                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleMemberSelection(m.id)}
+                        className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600 dark:border-zinc-700 dark:bg-zinc-800"
+                      />
+                      <span>{m.displayName} {m.id === currentMemberId ? '(You)' : ''}</span>
+                    </label>
+
+                    {isSelected && (
+                      <div className="flex items-center gap-2">
+                        {splitType === 'exact' && (
+                          <div className="relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-xs text-zinc-400">
+                              {currencySymbol}
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={customValues[m.id] || ''}
+                              onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
+                              placeholder="0.00"
+                              className="w-24 rounded-lg border border-zinc-300 bg-white pl-6 pr-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                            />
+                          </div>
+                        )}
+
+                        {splitType === 'percentage' && (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="100"
+                              value={customValues[m.id] || ''}
+                              onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
+                              placeholder="0"
+                              className="w-20 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                            />
+                            <span className="text-xs text-zinc-500 ml-1">%</span>
+                          </div>
+                        )}
+
+                        {splitType === 'shares' && (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              step="1"
+                              min="1"
+                              value={customValues[m.id] || '1'}
+                              onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
+                              placeholder="1"
+                              className="w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono text-center"
+                            />
+                            <span className="text-xs text-zinc-500">share</span>
+                          </div>
+                        )}
+
+                        {preview && (
+                          <span className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-300">
+                            {formatMinorUnits(preview.owedAmount, currency)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || Boolean(splitValidationError)}
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              {loading ? 'Saving...' : 'Add Expense'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

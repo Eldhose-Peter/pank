@@ -145,3 +145,74 @@ export function simplifyDebts(
 
   return debts;
 }
+
+/**
+ * Calculates direct, unsimplified pairwise debts between members.
+ * For each pair (A, B), computes net amount A owes B based on individual expenses and settlements.
+ */
+export function calculatePairwiseDebts(
+  expenses: ExpenseRecord[],
+  settlements: SettlementInput[] = []
+): PairwiseDebt[] {
+  // Key: `${from}->${to}`, value: debt amount
+  const debtMatrix: Record<string, number> = {};
+
+  const addDebt = (from: string, to: string, amount: number) => {
+    if (from === to || amount === 0) return;
+    const key = `${from}->${to}`;
+    debtMatrix[key] = (debtMatrix[key] || 0) + amount;
+  };
+
+  for (const expense of expenses) {
+    if (expense.isDeleted || expense.amount === 0) continue;
+
+    const totalAmount = expense.amount;
+
+    for (const split of expense.splits) {
+      const splitMemberId = (split as { memberId?: string; groupMemberId?: string }).memberId ||
+                            (split as { memberId?: string; groupMemberId?: string }).groupMemberId;
+      if (!splitMemberId || split.owedAmount === 0) continue;
+
+      for (const payment of expense.payments) {
+        const payerId = (payment as { memberId?: string; groupMemberId?: string }).memberId ||
+                        (payment as { memberId?: string; groupMemberId?: string }).groupMemberId;
+        if (!payerId || payerId === splitMemberId || payment.amountPaid === 0) continue;
+
+        // Proportional share covered by this payer
+        const proportionPaid = payment.amountPaid / totalAmount;
+        const portionOwed = Math.round(split.owedAmount * proportionPaid);
+        addDebt(splitMemberId, payerId, portionOwed);
+      }
+    }
+  }
+
+  // Factor in settlements (payer pays payee directly reduces payer's debt to payee)
+  for (const settlement of settlements) {
+    // A paid settlement to B -> effectively reduces A's debt to B, or increases B's debt to A
+    addDebt(settlement.payeeMemberId, settlement.payerMemberId, settlement.amount);
+  }
+
+  // Net out bilateral debts: if A owes B 50 and B owes A 30, net is A owes B 20
+  const processedPairs = new Set<string>();
+  const pairwiseDebts: PairwiseDebt[] = [];
+
+  const allKeys = Object.keys(debtMatrix);
+  for (const key of allKeys) {
+    const [a, b] = key.split('->');
+    const pairKey = [a, b].sort().join('<->');
+    if (processedPairs.has(pairKey)) continue;
+    processedPairs.add(pairKey);
+
+    const aOwesB = debtMatrix[`${a}->${b}`] || 0;
+    const bOwesA = debtMatrix[`${b}->${a}`] || 0;
+
+    const net = aOwesB - bOwesA;
+    if (net > 0) {
+      pairwiseDebts.push({ fromMemberId: a, toMemberId: b, amount: net });
+    } else if (net < 0) {
+      pairwiseDebts.push({ fromMemberId: b, toMemberId: a, amount: Math.abs(net) });
+    }
+  }
+
+  return pairwiseDebts;
+}
