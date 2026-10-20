@@ -1,10 +1,12 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { GroupService } from '@/modules/groups/service';
 import { LandingHero } from '@/components/home/LandingHero';
 import { UserDashboard } from '@/components/home/UserDashboard';
 
 async function HomeContent() {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

@@ -38,9 +38,26 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Do not run on static files or auth callback
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const {
+      data,
+      error,
+    } = await supabase.auth.getUser();
+    user = data?.user ?? null;
+
+    if (error && (error.code === 'refresh_token_not_found' || error.code === 'refresh_token_already_used')) {
+      // Clean up stale auth cookies if the refresh token is dead or revoked
+      request.cookies.getAll().forEach((c) => {
+        if (c.name.includes('-auth-token')) {
+          request.cookies.delete(c.name);
+          supabaseResponse.cookies.delete(c.name);
+        }
+      });
+    }
+  } catch {
+    // Ignore transient auth errors during session update
+  }
 
   // Protected routes check
   const isProtectedPath =

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
@@ -10,7 +11,16 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     if (error || !user) {
-      return NextResponse.json({ user: null });
+      const response = NextResponse.json({ user: null });
+      if (error && (error.code === 'refresh_token_not_found' || error.code === 'refresh_token_already_used')) {
+        const cookieStore = await cookies();
+        cookieStore.getAll().forEach((c) => {
+          if (c.name.includes('-auth-token')) {
+            response.cookies.delete(c.name);
+          }
+        });
+      }
+      return response;
     }
 
     const { data: profile } = await supabase

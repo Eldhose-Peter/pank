@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { GroupService } from '@/modules/groups/service';
@@ -7,6 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 
 async function GroupPageContent({ params }: { params: Promise<{ groupId: string }> }) {
+  await connection();
   const { groupId } = await params;
   const supabase = await createClient();
   const {
