@@ -22,7 +22,7 @@ export function LandingHero() {
     try {
       const res = await fetch('/api/auth/demo', { method: 'POST' });
       if (res.ok) {
-        router.refresh();
+        window.location.href = '/';
       }
     } catch (err) {
       console.error('Demo login error:', err);

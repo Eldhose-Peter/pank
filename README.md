@@ -62,6 +62,34 @@ Detailed architectural blueprints, complete 12-table relational schema with Row 
 
 ---
 
+## Phase 3: AI Integration (Gemini 2.5 Flash) (Completed)
+
+1. **Structured Output Extraction**:
+   - Powered by `@google/genai` using the `gemini-2.5-flash` model with JSON schema enforcement.
+   - Extracts title, amount, currency, split type, payers, participants, and detects missing information.
+   - Heuristic fallback engine for offline environments and CI pipelines.
+2. **Member Resolution Engine**:
+   - `MemberResolver`: Resolves "me"/"I"/"myself" to caller, performs exact case-insensitive matches, first-name matches, and fuzzy token similarity matching.
+   - Disambiguates duplicate names and captures unresolved names with suggestion options or placeholder friend creation.
+3. **Interactive Expense Drafts Workflow**:
+   - `DraftService`:
+     - Enforces strict separation: LLM extracts intent into JSON drafts; backend deterministically calculates authoritative penny-perfect splits.
+     - Generates clarification questions when input is ambiguous (`pending_clarification`).
+     - Displays editable preview when resolved (`ready_for_review`).
+     - Explicit confirmation persists authoritative expense using the draft ID as an idempotency key (`confirmed`).
+4. **Conversational Group Assistant**:
+   - `ConversationService`: Grounds Gemini responses on live group balances, member net debts, and simplified payment paths.
+5. **Route Handlers**:
+   - `/api/groups/[groupId]/ai/parse` (POST): Natural-language text -> expense draft
+   - `/api/groups/[groupId]/ai/drafts/[draftId]` (GET, PATCH): Fetch or edit draft preview
+   - `/api/groups/[groupId]/ai/drafts/[draftId]/confirm` (POST): Explicit confirmation
+   - `/api/groups/[groupId]/ai/drafts/[draftId]/reject` (POST): Reject draft
+   - `/api/groups/[groupId]/ai/chat` (POST): Natural language Q&A about group balances
+6. **Automated Test Suite**:
+   - 56 comprehensive Vitest unit tests across 11 test suites.
+
+---
+
 ## Getting Started
 
 ### 1. Prerequisites
@@ -94,7 +122,7 @@ supabase db push
 ```
 
 ### 4. Running Tests
-Run the Vitest test suite (44 unit tests covering split calculation, penny rounding, zero-sum balances, debt simplification, pairwise debts, expense service transactions, and settlement schemas):
+Run the Vitest test suite (56 unit tests covering split calculation, penny rounding, zero-sum balances, debt simplification, pairwise debts, Gemini AI expense extraction, member name resolution, and draft state machines):
 ```bash
 npm test
 ```

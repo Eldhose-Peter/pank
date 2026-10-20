@@ -12,6 +12,7 @@
     "seed": "npx tsx --env-file=.env.local scripts/seed-demo.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.30.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "clsx": "^2.1.1",

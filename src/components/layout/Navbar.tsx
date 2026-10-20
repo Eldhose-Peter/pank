@@ -50,8 +50,7 @@ export function Navbar() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } catch (err) {
       console.error('Logout error:', err);
     } finally {

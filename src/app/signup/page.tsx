@@ -34,8 +34,7 @@ function SignupForm() {
         throw new Error(data.error || 'Failed to create account');
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      window.location.href = redirectTo;
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -57,8 +56,7 @@ function SignupForm() {
         throw new Error(data.error || 'Failed to sign in with demo account');
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      window.location.href = redirectTo;
     } catch (err: any) {
       setError(err.message);
     } finally {
