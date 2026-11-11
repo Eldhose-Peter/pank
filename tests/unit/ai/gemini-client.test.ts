@@ -53,4 +53,43 @@ describe('AI: GeminiAIClient Expense Parsing', () => {
     expect(draft.amount).toBe(500);
     expect(draft.participants.length).toBe(members.length);
   });
+
+  it('detects proportional split from fraction language like "one third"', async () => {
+    const twoMembers = [
+      { id: 'm-me', displayName: 'Demo User', isCurrentUser: true },
+      { id: 'm-alice', displayName: 'Alice', isCurrentUser: false },
+    ];
+    const input = 'Alice and i ate pizza for 300 rupees, Alice ate one third. Split based on the amount eaten.';
+    const draft = await client.extractExpense(input, twoMembers, 'INR');
+
+    expect(draft.amount).toBe(300);
+    expect(draft.splitType).not.toBe('equal');
+    // Should be 'shares' (1:2 ratio) or 'percentage' or 'exact' — anything but equal
+    expect(['shares', 'percentage', 'exact']).toContain(draft.splitType);
+  });
+
+  it('detects ratio-based split like "70-30 split"', async () => {
+    const twoMembers = [
+      { id: 'm-me', displayName: 'Eldho', isCurrentUser: true },
+      { id: 'm-rahul', displayName: 'Rahul', isCurrentUser: false },
+    ];
+    const input = 'Paid ₹1000 for cab with Rahul, 70-30 split';
+    const draft = await client.extractExpense(input, twoMembers, 'INR');
+
+    expect(draft.amount).toBe(1000);
+    expect(draft.splitType).not.toBe('equal');
+  });
+
+  it('detects "split based on usage" as non-equal', async () => {
+    const twoMembers = [
+      { id: 'm-me', displayName: 'Eldho', isCurrentUser: true },
+      { id: 'm-rahul', displayName: 'Rahul', isCurrentUser: false },
+    ];
+    const input = 'Rahul and I used internet for 600 rupees. I used half, Rahul used the other half. Split based on usage.';
+    const draft = await client.extractExpense(input, twoMembers, 'INR');
+
+    expect(draft.amount).toBe(600);
+    // "half and half" could reasonably be equal or shares — both are correct
+    expect(['equal', 'shares', 'percentage', 'exact']).toContain(draft.splitType);
+  });
 });

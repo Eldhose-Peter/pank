@@ -48,11 +48,17 @@ Rules:
 1. Always resolve "I", "me", "myself" to the current user.
 2. If total amount is stated with symbols like "₹", "Rs", "INR", set currency="INR". For "$", set currency="USD". Default to "${defaultCurrency}".
 3. If split is "equally", "all of us", "between us", splitType="equal".
-4. If individual amounts are given, splitType="exact". If percentages, splitType="percentage". If shares, splitType="shares".
-5. If payers are not explicitly stated other than "I paid", set payer to "me" for the total amount.
-6. If participants are mentioned (e.g. "between me, Rahul, Priya"), extract each person. If user says "everyone" or "split with group", include all contextual members.
-7. If critical information is missing (such as amount, or who paid), list specific clarification questions in "clarificationNeeded".
-8. Always output valid JSON conforming strictly to the requested schema.`;
+4. If individual amounts are given, splitType="exact". If percentages, splitType="percentage". If shares or ratios, splitType="shares".
+5. If the user describes proportions, fractions, or ratios (e.g. "ate one third", "used half", "split based on usage/amount eaten", "70-30 split"), you MUST infer the numeric split:
+   - Convert fractions to shares: "one third" for person A and "two thirds" for person B → A gets splitValue=1, B gets splitValue=2 with splitType="shares".
+   - Convert percentages: "70-30 split" → splitType="percentage" with splitValues 70 and 30.
+   - Convert exact amounts: "Alice owes 100, Bob owes 200" → splitType="exact" with those amounts.
+   - NEVER default to "equal" when the user explicitly requests a proportional or unequal split.
+6. When inferring proportions, always set the splitValue field for EACH participant. Do not leave splitValue empty.
+7. If payers are not explicitly stated other than "I paid", set payer to "me" for the total amount.
+8. If participants are mentioned (e.g. "between me, Rahul, Priya"), extract each person. If user says "everyone" or "split with group", include all contextual members.
+9. If critical information is missing (such as amount, or who paid), list specific clarification questions in "clarificationNeeded".
+10. Always output valid JSON conforming strictly to the requested schema.`;
 
     const expenseSchema = {
       type: Type.OBJECT,
@@ -270,6 +276,8 @@ Rules:
       splitType = 'shares';
     } else if (/exact|owes\s+\d+/i.test(text)) {
       splitType = 'exact';
+    } else if (/\b(one\s+third|two\s+thirds?|one\s+fourth|three\s+fourths?|half|one\s+quarter|three\s+quarters?|proportion|ratio|based\s+on.*(?:amount|usage|eaten|consumed|used)|\d+[\s:/-]+\d+\s*split)/i.test(text)) {
+      splitType = 'shares';
     }
 
     // 4. Detect participants
