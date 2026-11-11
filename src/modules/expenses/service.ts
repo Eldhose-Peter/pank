@@ -104,6 +104,15 @@ export class ExpenseService {
     }
 
     const res = rpcResult as { success: boolean; expenseId: string; isDuplicate: boolean };
+
+    // Update receipt_url if provided
+    if (data.receiptUrl && res.expenseId) {
+      await this.supabase
+        .from('expenses')
+        .update({ receipt_url: data.receiptUrl })
+        .eq('id', res.expenseId);
+    }
+
     return {
       success: res.success,
       expenseId: res.expenseId,
@@ -189,6 +198,14 @@ export class ExpenseService {
     }
 
     const res = rpcResult as { success: boolean; expenseId: string };
+
+    if (data.receiptUrl !== undefined && res.expenseId) {
+      await this.supabase
+        .from('expenses')
+        .update({ receipt_url: data.receiptUrl })
+        .eq('id', res.expenseId);
+    }
+
     return {
       success: res.success,
       expenseId: res.expenseId,
@@ -263,6 +280,7 @@ export class ExpenseService {
       expenseDate: expense.expense_date,
       createdBy: expense.created_by,
       idempotencyKey: expense.idempotency_key,
+      receiptUrl: expense.receipt_url,
       isDeleted: expense.is_deleted,
       payments: (payments || []).map((p) => ({
         id: p.id,
@@ -356,6 +374,7 @@ export class ExpenseService {
       expenseDate: e.expense_date,
       createdBy: e.created_by,
       idempotencyKey: e.idempotency_key,
+      receiptUrl: e.receipt_url,
       isDeleted: e.is_deleted,
       payments: (paymentsByExpense[e.id] || []).map((p) => ({
         id: p.id,

@@ -13,7 +13,13 @@ export class GeminiAIClient {
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const envModel = process.env.GEMINI_MODEL;
+    // Map sunset models to gemini-flash-latest
+    if (!envModel || envModel === 'gemini-2.5-flash' || envModel === 'gemini-2.5-flash-lite') {
+      this.modelName = 'gemini-flash-latest';
+    } else {
+      this.modelName = envModel;
+    }
 
     if (apiKey && apiKey !== 'placeholder-gemini-api-key' && apiKey !== 'your-gemini-api-key-here') {
       this.client = new GoogleGenAI({ apiKey });
@@ -216,6 +222,184 @@ Rules:
     } catch (error) {
       console.error('Gemini audio transcription error:', error);
       throw new Error('Failed to transcribe audio. Please try again or type your expense instead.');
+    }
+  }
+
+  /**
+   * Parses an uploaded receipt / bill image using Gemini 2.5 Flash Vision.
+   * Extracts merchant name, total amount, taxes, date, line items, and maps
+   * any user-provided split notes to contextual group members.
+   */
+  async extractExpenseFromReceipt(
+    imageBytes: Buffer,
+    mimeType: string,
+    members: GroupMemberContext[],
+    defaultCurrency: string = 'INR',
+    extraInstructions: string = ''
+  ): Promise<ExtractedExpenseDraft> {
+    if (!this.client) {
+      return {
+        title: 'Uploaded Receipt',
+        description: extraInstructions || 'Receipt parsed in offline mode',
+        amount: 1000,
+        currency: defaultCurrency,
+        splitType: 'equal',
+        expenseDate: new Date().toISOString().split('T')[0],
+        payers: [{ rawName: 'me', amount: 1000 }],
+        participants: members.map((m) => ({ rawName: m.displayName })),
+        clarificationNeeded: [],
+        confidence: 0.8,
+        receiptItems: [],
+      };
+    }
+
+    const memberListText = members
+      .map((m) => `- ${m.displayName}${m.isCurrentUser ? ' (Current User / "me" / "I")' : ''}`)
+      .join('\n');
+
+    const systemInstruction = `You are an expert OCR receipt and bill parser for an expense-sharing application.
+Your job is to read the attached receipt/bill image and extract the expense details into structured JSON.
+
+Contextual group members:
+${memberListText}
+
+Rules:
+1. Identify the merchant or restaurant name as the "title" (e.g. "Starbucks", "Domino's Pizza", "Target", "Shell"). If unreadable, use a sensible title based on items (e.g. "Dinner", "Groceries").
+2. Extract the FINAL Grand Total amount including all taxes, discounts, and tips. Use standard major currency units (e.g. 1500 for ₹1,500.00).
+3. Detect the currency (e.g. INR for ₹ or Rs, USD for $, EUR for €). Default to "${defaultCurrency}" if ambiguous.
+4. Extract the date from the bill in YYYY-MM-DD format if visible, otherwise today's date.
+5. If user provided split instructions (${extraInstructions ? `"${extraInstructions}"` : 'none'}), apply them:
+   - If user specifies proportions, fractions, or ratios (e.g. "ate one third", "70-30 split"), convert to splitType="shares" or "percentage" with appropriate splitValue for each member.
+   - If user says split equally or gives no instructions, set splitType="equal" and include all contextual group members.
+   - Payer defaults to "me" unless user stated otherwise.
+6. Extract individual line items if clearly printed (name and price).
+7. Always output valid JSON conforming strictly to the requested schema.`;
+
+    const receiptSchema = {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description: 'Merchant or venue name from receipt (e.g. Domino\'s Pizza, Starbucks)',
+        },
+        description: {
+          type: Type.STRING,
+          description: 'Summary of items or notes from receipt',
+        },
+        amount: {
+          type: Type.NUMBER,
+          description: 'Grand total bill amount in major currency units',
+        },
+        currency: {
+          type: Type.STRING,
+          description: '3-letter currency code (e.g. INR, USD, EUR)',
+        },
+        splitType: {
+          type: Type.STRING,
+          enum: ['equal', 'exact', 'percentage', 'shares'],
+          description: 'Method used to divide the expense',
+        },
+        expenseDate: {
+          type: Type.STRING,
+          description: 'Date printed on receipt in YYYY-MM-DD format, or today',
+        },
+        payers: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              rawName: { type: Type.STRING, description: 'Payer name (e.g. "me")' },
+              amount: { type: Type.NUMBER, description: 'Amount paid by this person' },
+            },
+            required: ['rawName'],
+          },
+        },
+        participants: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              rawName: { type: Type.STRING, description: 'Participant member name' },
+              splitValue: { type: Type.NUMBER, description: 'Value for exact/percentage/shares or 1 for equal' },
+            },
+            required: ['rawName'],
+          },
+        },
+        receiptItems: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING, description: 'Item name' },
+              amount: { type: Type.NUMBER, description: 'Item price in major currency units' },
+            },
+            required: ['name', 'amount'],
+          },
+          description: 'Line items detected on receipt',
+        },
+        clarificationNeeded: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+        },
+        confidence: {
+          type: Type.NUMBER,
+          description: 'Extraction confidence score between 0.0 and 1.0',
+        },
+      },
+      required: ['title', 'amount', 'currency', 'splitType', 'payers', 'participants'],
+    };
+
+    try {
+      const base64Image = imageBytes.toString('base64');
+      const parts: any[] = [
+        {
+          inlineData: {
+            mimeType: mimeType || 'image/jpeg',
+            data: base64Image,
+          },
+        },
+        {
+          text: extraInstructions
+            ? `Please extract the expense details from this receipt. User notes: "${extraInstructions}".`
+            : `Please extract the expense details from this receipt and split equally among contextual members.`,
+        },
+      ];
+
+      const response = await this.client.models.generateContent({
+        model: this.modelName,
+        contents: [
+          {
+            role: 'user',
+            parts,
+          },
+        ],
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: receiptSchema,
+          temperature: 0.1,
+        },
+      });
+
+      const responseText = response.text?.trim() || '{}';
+      const parsed = JSON.parse(responseText);
+
+      return {
+        title: parsed.title || 'Receipt Expense',
+        description: parsed.description || null,
+        amount: Number(parsed.amount) || 0,
+        currency: (parsed.currency || defaultCurrency).toUpperCase(),
+        splitType: parsed.splitType || 'equal',
+        expenseDate: parsed.expenseDate || new Date().toISOString().split('T')[0],
+        payers: Array.isArray(parsed.payers) ? parsed.payers : [{ rawName: 'me' }],
+        participants: Array.isArray(parsed.participants) ? parsed.participants : members.map((m) => ({ rawName: m.displayName })),
+        clarificationNeeded: parsed.clarificationNeeded || [],
+        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.9,
+        receiptItems: Array.isArray(parsed.receiptItems) ? parsed.receiptItems : [],
+      };
+    } catch (error) {
+      console.error('Gemini receipt extraction failed:', error);
+      throw new Error('Failed to analyze the bill image. Please ensure the image is clear or enter the details manually.');
     }
   }
 

@@ -92,4 +92,20 @@ describe('AI: GeminiAIClient Expense Parsing', () => {
     // "half and half" could reasonably be equal or shares — both are correct
     expect(['equal', 'shares', 'percentage', 'exact']).toContain(draft.splitType);
   });
+
+  it('extracts receipt in fallback offline mode gracefully', async () => {
+    const fakeImageBuffer = Buffer.from('fake-image-data');
+    const draft = await client.extractExpenseFromReceipt(
+      fakeImageBuffer,
+      'image/jpeg',
+      members,
+      'INR',
+      'Split equally between everyone'
+    );
+
+    expect(draft).toBeDefined();
+    expect(draft.amount).toBeGreaterThan(0);
+    expect(draft.currency).toBe('INR');
+    expect(draft.participants.length).toBeGreaterThan(0);
+  });
 });

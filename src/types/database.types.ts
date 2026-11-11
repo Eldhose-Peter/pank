@@ -147,6 +147,7 @@ export type Database = {
           expense_date: string;
           created_by: string;
           idempotency_key: string | null;
+          receipt_url: string | null;
           is_deleted: boolean;
           created_at: string;
           updated_at: string;
@@ -162,6 +163,7 @@ export type Database = {
           expense_date?: string;
           created_by: string;
           idempotency_key?: string | null;
+          receipt_url?: string | null;
           is_deleted?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -177,6 +179,7 @@ export type Database = {
           expense_date?: string;
           created_by?: string;
           idempotency_key?: string | null;
+          receipt_url?: string | null;
           is_deleted?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -379,6 +382,7 @@ export type Database = {
           structured_data: Json;
           status: 'pending_clarification' | 'ready_for_review' | 'confirmed' | 'rejected';
           clarification_questions: Json;
+          receipt_url: string | null;
           expires_at: string;
           created_at: string;
           updated_at: string;
@@ -392,6 +396,7 @@ export type Database = {
           structured_data: Json;
           status?: 'pending_clarification' | 'ready_for_review' | 'confirmed' | 'rejected';
           clarification_questions?: Json;
+          receipt_url?: string | null;
           expires_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -405,6 +410,7 @@ export type Database = {
           structured_data?: Json;
           status?: 'pending_clarification' | 'ready_for_review' | 'confirmed' | 'rejected';
           clarification_questions?: Json;
+          receipt_url?: string | null;
           expires_at?: string;
           created_at?: string;
           updated_at?: string;

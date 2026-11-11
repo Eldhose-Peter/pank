@@ -38,6 +38,7 @@ export interface Expense {
   expenseDate: string;
   createdBy: string;
   idempotencyKey: string | null;
+  receiptUrl?: string | null;
   isDeleted: boolean;
   payments: ExpensePayment[];
   splits: ExpenseSplit[];
@@ -63,6 +64,7 @@ export interface CreateExpenseDTO {
   splitType: SplitType;
   expenseDate?: string;
   idempotencyKey?: string;
+  receiptUrl?: string | null;
   /**
    * Multi-payer list. If only one person paid, you can provide either
    * `payers: [{ groupMemberId, amountPaid }]` or use `paidByMemberId`.
@@ -79,6 +81,7 @@ export interface UpdateExpenseDTO {
   currency?: string;
   splitType: SplitType;
   expenseDate?: string;
+  receiptUrl?: string | null;
   payers?: PayerInputDTO[];
   paidByMemberId?: string;
   participants: ParticipantSplitInputDTO[];

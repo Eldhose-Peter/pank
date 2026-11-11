@@ -38,6 +38,7 @@ export const createExpenseSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expense date must be in YYYY-MM-DD format')
       .default(() => new Date().toISOString().split('T')[0]),
     idempotencyKey: z.string().uuid('Idempotency key must be a valid UUID').optional(),
+    receiptUrl: z.string().nullable().optional(),
     payers: z.array(payerInputSchema).optional(),
     paidByMemberId: z.string().uuid('Invalid payer member ID').optional(),
     participants: z
@@ -79,6 +80,7 @@ export const updateExpenseSchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expense date must be in YYYY-MM-DD format')
       .default(() => new Date().toISOString().split('T')[0]),
+    receiptUrl: z.string().nullable().optional(),
     payers: z.array(payerInputSchema).optional(),
     paidByMemberId: z.string().uuid('Invalid payer member ID').optional(),
     participants: z

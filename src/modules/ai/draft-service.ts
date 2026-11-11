@@ -6,6 +6,7 @@ import type {
   ExpenseDraftPreview,
   ClarificationQuestion,
   DraftStatus,
+  ExtractedExpenseDraft,
 } from './types';
 import { calculateSplits } from '@/modules/accounting/calculations';
 import { ExpenseService } from '@/modules/expenses/service';
@@ -30,7 +31,8 @@ export class DraftService {
     userId: string,
     groupId: string,
     rawInput: string,
-    sessionId?: string
+    sessionId?: string,
+    receiptUrl?: string
   ): Promise<ExpenseDraftPreview> {
     // 1. Verify caller membership & get current member info
     const currentMember = await this.getCurrentGroupMember(userId, groupId);
@@ -89,10 +91,42 @@ export class DraftService {
       conversationHistory
     );
 
+    return this.processExtractedDraft(
+      userId,
+      groupId,
+      rawInput,
+      extracted,
+      members,
+      currentMember,
+      sessionId,
+      receiptUrl
+    );
+  }
+
+  /**
+   * Processes any extracted draft into a saved draft preview with member resolution & split calculation.
+   */
+  async processExtractedDraft(
+    userId: string,
+    groupId: string,
+    rawInput: string,
+    extracted: ExtractedExpenseDraft,
+    members: { id: string; user_id: string | null; display_name: string; is_placeholder: boolean }[],
+    currentMember: { id: string; display_name: string },
+    sessionId?: string,
+    receiptUrl?: string
+  ): Promise<ExpenseDraftPreview> {
+    const memberCandidates: GroupMemberCandidate[] = members.map((m) => ({
+      id: m.id,
+      displayName: m.display_name,
+      userId: m.user_id,
+      isCurrentUser: m.id === currentMember.id,
+    }));
+
     // Minor units conversion (e.g. ₹2,400 -> 240000 paise)
     const amountMinor = Math.round(extracted.amount * 100);
 
-    // 6. Resolve participant and payer names
+    // Resolve participant and payer names
     const resolution = MemberResolver.resolveMembers(
       extracted.payers,
       extracted.participants,
@@ -101,7 +135,7 @@ export class DraftService {
       100
     );
 
-    // 7. Generate Clarification Questions if needed
+    // Generate Clarification Questions if needed
     const clarificationQuestions: ClarificationQuestion[] = [];
 
     if (amountMinor <= 0) {
@@ -153,7 +187,7 @@ export class DraftService {
       });
     }
 
-    // 8. Determine Draft Status & Calculate Splits if resolved
+    // Determine Draft Status & Calculate Splits if resolved
     let status: DraftStatus = clarificationQuestions.length > 0 ? 'pending_clarification' : 'ready_for_review';
     let computedSplits: {
       groupMemberId: string;
@@ -205,7 +239,7 @@ export class DraftService {
           amountPaid: amountMinor,
         }];
 
-    // 9. Persist Draft in database
+    // Persist Draft in database
     const draftStructuredData = {
       title: extracted.title,
       description: extracted.description || null,
@@ -216,6 +250,8 @@ export class DraftService {
       payers: payersList,
       splits: computedSplits,
       unresolvedNames: resolution.unresolvedNames,
+      receiptUrl: receiptUrl || null,
+      receiptItems: extracted.receiptItems || [],
     };
 
     const { data: draftRecord, error: draftError } = await this.supabase
@@ -227,6 +263,7 @@ export class DraftService {
         raw_input: rawInput,
         structured_data: draftStructuredData as any,
         status,
+        receipt_url: receiptUrl || null,
         clarification_questions: clarificationQuestions as unknown as Database['public']['Tables']['expense_drafts']['Insert']['clarification_questions'],
       })
       .select()
@@ -236,7 +273,7 @@ export class DraftService {
       throw new GroupError(draftError?.message || 'Failed to save expense draft');
     }
 
-    // 10. Record conversation messages if in a session
+    // Record conversation messages if in a session
     if (sessionId) {
       await this.supabase.from('conversation_messages').insert([
         {
@@ -271,6 +308,8 @@ export class DraftService {
       splits: computedSplits,
       clarificationQuestions,
       unresolvedNames: resolution.unresolvedNames,
+      receiptUrl: receiptUrl || null,
+      receiptItems: extracted.receiptItems || [],
       expiresAt: draftRecord.expires_at,
       createdAt: draftRecord.created_at,
       updatedAt: draftRecord.updated_at,
@@ -308,6 +347,8 @@ export class DraftService {
       payers: { groupMemberId: string; displayName: string; amountPaid: number }[];
       splits: { groupMemberId: string; displayName: string; splitValue: number; owedAmount: number }[];
       unresolvedNames?: { rawName: string; suggestedMatches: [] }[];
+      receiptUrl?: string | null;
+      receiptItems?: { name: string; amount: number }[];
     };
 
     return {
@@ -326,6 +367,8 @@ export class DraftService {
       splits: structured.splits || [],
       clarificationQuestions: (draft.clarification_questions as unknown as ClarificationQuestion[]) || [],
       unresolvedNames: (structured.unresolvedNames as unknown as ExpenseDraftPreview['unresolvedNames']) || [],
+      receiptUrl: draft.receipt_url || structured.receiptUrl || null,
+      receiptItems: structured.receiptItems || [],
       expiresAt: draft.expires_at,
       createdAt: draft.created_at,
       updatedAt: draft.updated_at,
@@ -508,6 +551,7 @@ export class DraftService {
       splitType: draft.splitType,
       expenseDate: draft.expenseDate,
       idempotencyKey: draft.id,
+      receiptUrl: draft.receiptUrl,
       payers: draft.payers.map((p) => ({
         groupMemberId: p.groupMemberId,
         amountPaid: p.amountPaid,

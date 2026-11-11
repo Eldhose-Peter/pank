@@ -28,6 +28,8 @@ export interface ExtractedExpenseDraft {
   participants: ExtractedParticipant[];
   clarificationNeeded: string[];
   confidence: number; // 0.0 to 1.0
+  receiptUrl?: string | null;
+  receiptItems?: { name: string; amount: number }[];
 }
 
 export interface ResolvedMember {
@@ -95,6 +97,8 @@ export interface ExpenseDraftPreview {
   }[];
   clarificationQuestions: ClarificationQuestion[];
   unresolvedNames: UnresolvedName[];
+  receiptUrl?: string | null;
+  receiptItems?: { name: string; amount: number }[];
   expiresAt: string;
   createdAt: string;
   updatedAt: string;

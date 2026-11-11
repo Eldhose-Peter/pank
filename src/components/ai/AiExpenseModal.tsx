@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { 
   Sparkles, 
   X, 
@@ -18,6 +18,9 @@ import {
   MicOff,
   Zap,
   Volume2,
+  Camera,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import type { ExpenseDraftPreview, ClarificationQuestion } from '@/modules/ai/types';
@@ -64,6 +67,42 @@ export function AiExpenseModal({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editAmount, setEditAmount] = useState('');
+
+  // Bill / receipt upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const [billParsing, setBillParsing] = useState(false);
+  const [showReceiptItems, setShowReceiptItems] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleBillUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      setError('File is too large. Maximum size is 15MB.');
+      return;
+    }
+
+    setSelectedFile(file);
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setFilePreviewUrl(url);
+    } else {
+      setFilePreviewUrl(null);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+      setFilePreviewUrl(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Voice input state
   type VoiceMode = 'browser' | 'gemini';
@@ -175,11 +214,44 @@ export function AiExpenseModal({
 
   const handleParse = async (textToParse?: string) => {
     const text = (textToParse || promptText).trim();
-    if (!text) return;
+    if (!text && !selectedFile) return;
 
-    setParsing(true);
     setError(null);
     setDraft(null);
+
+    // If a bill/receipt is selected, use the bill-parse endpoint
+    if (selectedFile) {
+      setBillParsing(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        if (text) {
+          formData.append('instructions', text);
+        }
+
+        const res = await fetch(`/api/groups/${groupId}/ai/bill-parse`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to scan bill');
+        }
+
+        setDraft(data.draft);
+        setEditTitle(data.draft.title);
+        setEditAmount((data.draft.amount / 100).toString());
+        setClarificationAnswers({});
+      } catch (err: any) {
+        setError(err.message || 'Error scanning bill');
+      } finally {
+        setBillParsing(false);
+      }
+      return;
+    }
+
+    setParsing(true);
 
     try {
       const res = await fetch(`/api/groups/${groupId}/ai/parse`, {
@@ -327,6 +399,7 @@ export function AiExpenseModal({
     }
     setDraft(null);
     setPromptText('');
+    handleRemoveFile();
     onClose();
   };
 
@@ -346,11 +419,11 @@ export function AiExpenseModal({
               <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                 Fast Natural Language Expense
                 <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[10px] font-semibold px-2 py-0.5 border border-indigo-200 dark:border-indigo-800">
-                  Gemini 2.5 Flash
+                  Gemini Flash
                 </span>
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Type or speak what you paid and with whom in plain English
+                Type, speak, or upload a bill to extract and split automatically
               </p>
             </div>
           </div>
@@ -419,13 +492,59 @@ export function AiExpenseModal({
               </div>
             </div>
 
+            {/* File Upload Hidden Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={handleBillUpload}
+            />
+
+            {/* Selected Bill Preview Chip */}
+            {selectedFile && (
+              <div className="mb-2 flex items-center justify-between rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 p-2.5 text-xs animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  {filePreviewUrl ? (
+                    <img
+                      src={filePreviewUrl}
+                      alt="Receipt preview"
+                      className="h-9 w-9 rounded-lg object-cover border border-indigo-200 shadow-sm"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-indigo-900 dark:text-indigo-200 truncate max-w-[260px]">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                      {(selectedFile.size / 1024).toFixed(0)} KB · Ready to scan with Gemini 2.5 Flash Vision
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="rounded-lg p-1 text-zinc-400 hover:bg-white hover:text-red-500 dark:hover:bg-zinc-800 transition-colors"
+                  title="Remove bill"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
             <div className="relative">
               <textarea
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
                 rows={3}
                 placeholder={
-                  isVoiceActive
+                  selectedFile
+                    ? 'Optional: Add split instructions (e.g. "Alice ate pizza, Bob paid for drinks") or leave blank to split equally.'
+                    : isVoiceActive
                     ? voiceMode === 'browser'
                       ? '🎤 Listening... speak your expense now'
                       : '🎤 Recording... tap "Stop Rec" when finished'
@@ -436,16 +555,32 @@ export function AiExpenseModal({
                     ? 'border-red-400 dark:border-red-600 ring-2 ring-red-500/20'
                     : 'border-zinc-200 dark:border-zinc-800'
                 }`}
-                disabled={parsing || voiceParsing}
+                disabled={parsing || voiceParsing || billParsing}
               />
 
-              {/* Action buttons inside textarea: Voice Mic + Extract Draft */}
-              <div className="absolute right-2.5 bottom-2.5 flex items-center gap-2">
-                {/* Voice Speak / Mic Button (Always Visible) */}
+              {/* Action buttons inside textarea: Upload Bill + Voice Mic + Extract Draft */}
+              <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
+                {/* Upload Bill Button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={parsing || voiceParsing || billParsing}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
+                    selectedFile
+                      ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
+                  }`}
+                  title="Upload or snap a bill / receipt (PNG, JPG, PDF)"
+                >
+                  <Camera className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+                  <span>{selectedFile ? 'Change Bill' : 'Upload Bill'}</span>
+                </button>
+
+                {/* Voice Speak / Mic Button */}
                 <button
                   type="button"
                   onClick={handleMicToggle}
-                  disabled={parsing || voiceParsing}
+                  disabled={parsing || voiceParsing || billParsing}
                   className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
                     isVoiceActive
                       ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
@@ -479,22 +614,27 @@ export function AiExpenseModal({
                   )}
                 </button>
 
-                {/* Extract Draft button */}
+                {/* Extract / Scan Bill Draft button */}
                 <button
                   type="button"
                   onClick={() => handleParse()}
-                  disabled={parsing || voiceParsing || !promptText.trim()}
+                  disabled={parsing || voiceParsing || billParsing || (!promptText.trim() && !selectedFile)}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:pointer-events-none transition-all"
                 >
-                  {parsing ? (
+                  {parsing || billParsing ? (
                     <>
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Parsing...
+                      <span>{billParsing ? 'Scanning Bill...' : 'Parsing...'}</span>
+                    </>
+                  ) : selectedFile ? (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Scan Bill</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-3.5 w-3.5" />
-                      Extract Draft
+                      <span>Extract Draft</span>
                     </>
                   )}
                 </button>
@@ -530,6 +670,15 @@ export function AiExpenseModal({
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 <span className="font-medium">
                   Uploading audio to Gemini multimodal AI for transcription & split calculation...
+                </span>
+              </div>
+            )}
+
+            {billParsing && (
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 px-3 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 animate-in fade-in">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span className="font-medium">
+                  Scanning receipt with Gemini 2.5 Flash Vision OCR & extracting amounts...
                 </span>
               </div>
             )}
@@ -679,6 +828,18 @@ export function AiExpenseModal({
                       <p className="text-xs text-zinc-500">
                         Paid by <span className="font-semibold text-zinc-700 dark:text-zinc-300">{draft.payers[0]?.displayName || 'You'}</span> on {draft.expenseDate}
                       </p>
+                      {draft.receiptUrl && (
+                        <a
+                          href={draft.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800"
+                        >
+                          <Receipt className="h-3 w-3" />
+                          View Attached Bill
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="text-base font-extrabold text-zinc-900 dark:text-white">
@@ -686,6 +847,37 @@ export function AiExpenseModal({
                       </div>
                       <div className="text-[11px] text-zinc-400 capitalize">{draft.splitType} split</div>
                     </div>
+                  </div>
+                )}
+
+                {/* Scanned Bill Line Items Breakdown (if present) */}
+                {draft.receiptItems && draft.receiptItems.length > 0 && (
+                  <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowReceiptItems((prev) => !prev)}
+                      className="flex items-center justify-between w-full text-[11px] font-semibold text-zinc-500 uppercase tracking-wider hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                    >
+                      <span className="flex items-center gap-1">
+                        <FileText className="h-3.5 w-3.5 text-indigo-500" />
+                        Scanned Bill Items ({draft.receiptItems.length})
+                      </span>
+                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                        {showReceiptItems ? 'Hide Items ▲' : 'Show Items ▼'}
+                      </span>
+                    </button>
+                    {showReceiptItems && (
+                      <div className="mt-2 space-y-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 p-2 text-xs divide-y divide-zinc-200/50 dark:divide-zinc-800">
+                        {draft.receiptItems.map((item, idx) => (
+                          <div key={idx} className="flex justify-between py-1 text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
+                            <span className="truncate pr-2">{item.name}</span>
+                            <span className="font-semibold text-zinc-900 dark:text-white shrink-0">
+                              {getCurrencySymbol(draft.currency)}{item.amount.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
