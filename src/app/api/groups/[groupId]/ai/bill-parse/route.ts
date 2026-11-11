@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { DraftService } from '@/modules/ai/draft-service';
 import { GeminiAIClient } from '@/modules/ai/gemini-client';
 import { GroupError } from '@/modules/groups/errors';
@@ -79,7 +80,15 @@ export async function POST(
     const storagePath = `${groupId}/${Date.now()}_${sanitizedFileName}`;
 
     try {
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const storageClient =
+        process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL
+          ? createSupabaseClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL,
+              process.env.SUPABASE_SERVICE_ROLE_KEY
+            )
+          : supabase;
+
+      const { data: uploadData, error: uploadError } = await storageClient.storage
         .from('expense-receipts')
         .upload(storagePath, fileBuffer, {
           contentType: file.type || 'image/jpeg',
@@ -87,7 +96,7 @@ export async function POST(
         });
 
       if (!uploadError && uploadData) {
-        const { data: publicUrlData } = supabase.storage
+        const { data: publicUrlData } = storageClient.storage
           .from('expense-receipts')
           .getPublicUrl(uploadData.path);
         receiptUrl = publicUrlData?.publicUrl || null;
