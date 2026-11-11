@@ -263,7 +263,6 @@ export class DraftService {
         raw_input: rawInput,
         structured_data: draftStructuredData as any,
         status,
-        receipt_url: receiptUrl || null,
         clarification_questions: clarificationQuestions as unknown as Database['public']['Tables']['expense_drafts']['Insert']['clarification_questions'],
       })
       .select()
@@ -478,6 +477,8 @@ export class DraftService {
       payers: payersList,
       splits: computedSplits,
       unresolvedNames: [],
+      receiptUrl: existing.receiptUrl || null,
+      receiptItems: existing.receiptItems || [],
     };
 
     const { data: updatedRecord, error } = await this.supabase
@@ -513,6 +514,8 @@ export class DraftService {
       splits: computedSplits,
       clarificationQuestions,
       unresolvedNames: [],
+      receiptUrl: existing.receiptUrl || null,
+      receiptItems: existing.receiptItems || [],
       expiresAt: updatedRecord.expires_at,
       createdAt: updatedRecord.created_at,
       updatedAt: updatedRecord.updated_at,

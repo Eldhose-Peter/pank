@@ -22,6 +22,16 @@ import {
   GroupError,
 } from '@/modules/groups/errors';
 
+function extractReceiptUrl(
+  receiptUrlColumn: string | null | undefined,
+  description: string | null | undefined
+): string | null {
+  if (receiptUrlColumn) return receiptUrlColumn;
+  if (!description) return null;
+  const match = description.match(/\[Receipt Attachment\]\((https?:\/\/[^\s)]+)\)/);
+  return match ? match[1] : null;
+}
+
 export class ExpenseService {
   constructor(private supabase: SupabaseClient<Database>) {}
 
@@ -107,10 +117,26 @@ export class ExpenseService {
 
     // Update receipt_url if provided
     if (data.receiptUrl && res.expenseId) {
-      await this.supabase
-        .from('expenses')
-        .update({ receipt_url: data.receiptUrl })
-        .eq('id', res.expenseId);
+      try {
+        const { error: updateErr } = await this.supabase
+          .from('expenses')
+          .update({ receipt_url: data.receiptUrl })
+          .eq('id', res.expenseId);
+
+        if (updateErr) {
+          // Schema fallback if receipt_url column does not exist on remote db yet
+          const receiptNote = `[Receipt Attachment](${data.receiptUrl})`;
+          const appendedDesc = data.description
+            ? `${data.description}\n\n${receiptNote}`
+            : receiptNote;
+          await this.supabase
+            .from('expenses')
+            .update({ description: appendedDesc })
+            .eq('id', res.expenseId);
+        }
+      } catch (err) {
+        console.warn('Error saving receipt_url on expenses:', err);
+      }
     }
 
     return {
@@ -200,10 +226,25 @@ export class ExpenseService {
     const res = rpcResult as { success: boolean; expenseId: string };
 
     if (data.receiptUrl !== undefined && res.expenseId) {
-      await this.supabase
-        .from('expenses')
-        .update({ receipt_url: data.receiptUrl })
-        .eq('id', res.expenseId);
+      try {
+        const { error: updateErr } = await this.supabase
+          .from('expenses')
+          .update({ receipt_url: data.receiptUrl })
+          .eq('id', res.expenseId);
+
+        if (updateErr && data.receiptUrl) {
+          const receiptNote = `[Receipt Attachment](${data.receiptUrl})`;
+          const baseDesc = data.description ?? '';
+          const cleanDesc = baseDesc.replace(/\n\n\[Receipt Attachment\]\([^)]+\)/g, '').trim();
+          const appendedDesc = cleanDesc ? `${cleanDesc}\n\n${receiptNote}` : receiptNote;
+          await this.supabase
+            .from('expenses')
+            .update({ description: appendedDesc })
+            .eq('id', res.expenseId);
+        }
+      } catch (err) {
+        console.warn('Error updating receipt_url on expenses:', err);
+      }
     }
 
     return {
@@ -280,7 +321,7 @@ export class ExpenseService {
       expenseDate: expense.expense_date,
       createdBy: expense.created_by,
       idempotencyKey: expense.idempotency_key,
-      receiptUrl: expense.receipt_url,
+      receiptUrl: extractReceiptUrl(expense.receipt_url, expense.description),
       isDeleted: expense.is_deleted,
       payments: (payments || []).map((p) => ({
         id: p.id,
@@ -374,7 +415,7 @@ export class ExpenseService {
       expenseDate: e.expense_date,
       createdBy: e.created_by,
       idempotencyKey: e.idempotency_key,
-      receiptUrl: e.receipt_url,
+      receiptUrl: extractReceiptUrl(e.receipt_url, e.description),
       isDeleted: e.is_deleted,
       payments: (paymentsByExpense[e.id] || []).map((p) => ({
         id: p.id,
