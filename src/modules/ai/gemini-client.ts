@@ -174,6 +174,52 @@ Rules:
   }
 
   /**
+   * Transcribes an audio blob to text using Gemini's multimodal capabilities.
+   * Sends the audio as inline data and asks Gemini to extract the spoken text.
+   */
+  async transcribeAudio(audioBlob: Blob): Promise<string> {
+    if (!this.client) {
+      return '(Audio transcription unavailable in offline mode)';
+    }
+
+    try {
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const base64Audio = Buffer.from(arrayBuffer).toString('base64');
+
+      // Determine MIME type from the blob, falling back to audio/webm
+      const mimeType = audioBlob.type || 'audio/webm';
+
+      const response = await this.client.models.generateContent({
+        model: this.modelName,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Audio,
+                },
+              },
+              {
+                text: `Transcribe this audio recording exactly as spoken. The speaker is describing an expense they want to split with friends. Output ONLY the transcribed text, nothing else. If you cannot understand the audio, respond with an empty string.`,
+              },
+            ],
+          },
+        ],
+        config: {
+          temperature: 0.0,
+        },
+      });
+
+      return response.text?.trim() || '';
+    } catch (error) {
+      console.error('Gemini audio transcription error:', error);
+      throw new Error('Failed to transcribe audio. Please try again or type your expense instead.');
+    }
+  }
+
+  /**
    * Generates conversational answers about group balances and expense history.
    */
   async answerGroupQuery(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { 
   Sparkles, 
   X, 
@@ -13,10 +13,16 @@ import {
   User,
   PlusCircle,
   Trash2,
-  Edit2
+  Edit2,
+  Mic,
+  MicOff,
+  Zap,
+  Volume2,
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import type { ExpenseDraftPreview, ClarificationQuestion } from '@/modules/ai/types';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 
 interface GroupMember {
   id: string;
@@ -58,6 +64,106 @@ export function AiExpenseModal({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editAmount, setEditAmount] = useState('');
+
+  // Voice input state
+  type VoiceMode = 'browser' | 'gemini';
+  const [voiceMode, setVoiceMode] = useState<VoiceMode>('browser');
+  const [voiceParsing, setVoiceParsing] = useState(false);
+
+  // Phase 1: Web Speech API (browser-native, free)
+  const {
+    isListening,
+    isSupported: webSpeechSupported,
+    transcript: interimTranscript,
+    toggleListening: toggleWebSpeech,
+    stopListening: stopWebSpeech,
+  } = useVoiceInput({
+    lang: 'en-IN',
+    onResult: (text) => {
+      setPromptText((prev) => (prev ? `${prev} ${text}` : text));
+    },
+    onError: (err) => setError(err),
+  });
+
+  // Phase 2: Gemini multimodal audio (records blob, sends to backend)
+  const {
+    isRecording,
+    isSupported: recorderSupported,
+    startRecording,
+    stopRecording,
+  } = useAudioRecorder({
+    onError: (err) => setError(err),
+  });
+
+  const voiceSupported = webSpeechSupported || recorderSupported;
+
+  const handleGeminiVoiceStop = useCallback(async () => {
+    const audioBlob = await stopRecording();
+    if (!audioBlob || audioBlob.size === 0) {
+      setError('No audio recorded. Please try again.');
+      return;
+    }
+
+    setVoiceParsing(true);
+    setError(null);
+    setDraft(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice-expense.webm');
+
+      const res = await fetch(`/api/groups/${groupId}/ai/voice-parse`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to parse voice input');
+      }
+
+      // Fill the text field with the transcript so the user can see what was heard
+      if (data.transcript) {
+        setPromptText(data.transcript);
+      }
+
+      setDraft(data.draft);
+      setEditTitle(data.draft.title);
+      setEditAmount((data.draft.amount / 100).toString());
+      setClarificationAnswers({});
+    } catch (err: any) {
+      setError(err.message || 'Error processing voice input');
+    } finally {
+      setVoiceParsing(false);
+    }
+  }, [stopRecording, groupId]);
+
+  const handleMicToggle = useCallback(async () => {
+    setError(null);
+    if (voiceMode === 'browser') {
+      if (!webSpeechSupported) {
+        // Fallback to Gemini voice if browser lacks Web Speech API
+        setError('Browser speech is not supported in this browser. Switching to Gemini AI mode...');
+        setVoiceMode('gemini');
+        try {
+          await startRecording();
+        } catch (err: any) {
+          setError(err.message || 'Microphone access failed');
+        }
+        return;
+      }
+      toggleWebSpeech();
+    } else {
+      // Gemini mode: toggle recording
+      if (isRecording) {
+        await handleGeminiVoiceStop();
+      } else {
+        await startRecording();
+      }
+    }
+  }, [voiceMode, webSpeechSupported, toggleWebSpeech, isRecording, handleGeminiVoiceStop, startRecording]);
+
+  const isVoiceActive = voiceMode === 'browser' ? isListening : isRecording;
 
   if (!isOpen) return null;
 
@@ -244,7 +350,7 @@ export function AiExpenseModal({
                 </span>
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Type what you paid and with whom in plain English
+                Type or speak what you paid and with whom in plain English
               </p>
             </div>
           </div>
@@ -267,37 +373,166 @@ export function AiExpenseModal({
 
           {/* Prompt Input Section */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Expense Description
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                Expense Description
+              </label>
+
+              {/* Voice Mode Toggle (Always Visible) */}
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[11px] font-medium border border-zinc-200 dark:border-zinc-700">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isVoiceActive) return;
+                      setVoiceMode('browser');
+                    }}
+                    disabled={isVoiceActive}
+                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 transition-all ${
+                      voiceMode === 'browser'
+                        ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    } disabled:opacity-60`}
+                    title="Browser-native Speech Recognition (Instant, Free)"
+                  >
+                    <Zap className="h-3 w-3" />
+                    Browser
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isVoiceActive) return;
+                      setVoiceMode('gemini');
+                    }}
+                    disabled={isVoiceActive}
+                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 transition-all ${
+                      voiceMode === 'gemini'
+                        ? 'bg-white dark:bg-zinc-700 text-violet-600 dark:text-violet-400 shadow-sm font-semibold'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    } disabled:opacity-60`}
+                    title="Gemini Multimodal Voice (Higher Accuracy, Multilingual)"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Gemini AI
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="relative">
               <textarea
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
                 rows={3}
-                placeholder="e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun."
-                className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white resize-none"
-                disabled={parsing}
+                placeholder={
+                  isVoiceActive
+                    ? voiceMode === 'browser'
+                      ? '🎤 Listening... speak your expense now'
+                      : '🎤 Recording... tap "Stop Rec" when finished'
+                    : 'e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun.'
+                }
+                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pb-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:bg-zinc-950 dark:text-white resize-none transition-colors ${
+                  isVoiceActive
+                    ? 'border-red-400 dark:border-red-600 ring-2 ring-red-500/20'
+                    : 'border-zinc-200 dark:border-zinc-800'
+                }`}
+                disabled={parsing || voiceParsing}
               />
-              <button
-                type="button"
-                onClick={() => handleParse()}
-                disabled={parsing || !promptText.trim()}
-                className="absolute right-2.5 bottom-2.5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:pointer-events-none transition-all"
-              >
-                {parsing ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Parsing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Extract Draft
-                  </>
-                )}
-              </button>
+
+              {/* Action buttons inside textarea: Voice Mic + Extract Draft */}
+              <div className="absolute right-2.5 bottom-2.5 flex items-center gap-2">
+                {/* Voice Speak / Mic Button (Always Visible) */}
+                <button
+                  type="button"
+                  onClick={handleMicToggle}
+                  disabled={parsing || voiceParsing}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
+                    isVoiceActive
+                      ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
+                      : voiceParsing
+                      ? 'bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 border border-violet-300 dark:border-violet-800'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
+                  }`}
+                  title={
+                    isVoiceActive
+                      ? voiceMode === 'browser'
+                        ? 'Stop listening'
+                        : 'Stop recording & parse'
+                      : `Click to speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini AI Voice'}`
+                  }
+                >
+                  {voiceParsing ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Transcribing...</span>
+                    </>
+                  ) : isVoiceActive ? (
+                    <>
+                      <MicOff className="h-3.5 w-3.5" />
+                      <span>{voiceMode === 'browser' ? 'Listening...' : 'Stop Rec'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+                      <span>Speak</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Extract Draft button */}
+                <button
+                  type="button"
+                  onClick={() => handleParse()}
+                  disabled={parsing || voiceParsing || !promptText.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                >
+                  {parsing ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Parsing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Extract Draft
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+
+            {/* Voice Activity Feedback Bar */}
+            {isVoiceActive && (
+              <div className="mt-2 flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                  </span>
+                  <span className="font-medium">
+                    {voiceMode === 'browser'
+                      ? 'Listening via Browser Speech API... speak your expense'
+                      : 'Recording audio for Gemini AI... tap "Stop Rec" when done'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleMicToggle}
+                  className="font-bold underline hover:no-underline text-xs"
+                >
+                  {voiceMode === 'browser' ? 'Done' : 'Process Audio'}
+                </button>
+              </div>
+            )}
+
+            {voiceParsing && (
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3 py-1.5 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span className="font-medium">
+                  Uploading audio to Gemini multimodal AI for transcription & split calculation...
+                </span>
+              </div>
+            )}
 
             {/* Quick Prompt Pills */}
             {!draft && (
