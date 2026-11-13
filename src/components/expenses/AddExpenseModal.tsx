@@ -196,8 +196,16 @@ export function AddExpenseModal({
   const currencySymbol = getCurrencySymbol(currency);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all">
-      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-zinc-200/90 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div 
+        className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-zinc-200/90 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Mobile Pull Handle */}
         <div className="pt-3 pb-1 flex justify-center sm:hidden">
           <div className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
@@ -337,7 +345,7 @@ export function AddExpenseModal({
                 <button
                   type="button"
                   onClick={() => setSelectedMemberIds(members.map((m) => m.id))}
-                  className="min-h-[36px] flex items-center text-xs text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-medium cursor-pointer"
+                  className="min-h-[44px] flex items-center px-2 text-xs text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-semibold cursor-pointer"
                 >
                   Select all
                 </button>
@@ -379,7 +387,7 @@ export function AddExpenseModal({
                                 value={customValues[m.id] || ''}
                                 onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
                                 placeholder="0.00"
-                                className="w-24 min-h-[36px] rounded-lg border border-zinc-300 bg-white pl-6 pr-2 py-1 text-sm sm:text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                                className="w-24 min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-6 pr-2 py-2 text-base sm:text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
                               />
                             </div>
                           )}
@@ -394,7 +402,7 @@ export function AddExpenseModal({
                                 value={customValues[m.id] || ''}
                                 onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
                                 placeholder="0"
-                                className="w-20 min-h-[36px] rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm sm:text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                                className="w-20 min-h-[44px] rounded-xl border border-zinc-300 bg-white px-2.5 py-2 text-base sm:text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
                               />
                               <span className="text-xs text-zinc-500 ml-1">%</span>
                             </div>
@@ -409,7 +417,7 @@ export function AddExpenseModal({
                                 value={customValues[m.id] || '1'}
                                 onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
                                 placeholder="1"
-                                className="w-16 min-h-[36px] rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm sm:text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono text-center"
+                                className="w-16 min-h-[44px] rounded-xl border border-zinc-300 bg-white px-2 py-2 text-base sm:text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono text-center"
                               />
                               <span className="text-xs text-zinc-500">share</span>
                             </div>

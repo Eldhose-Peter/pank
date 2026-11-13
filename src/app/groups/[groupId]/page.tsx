@@ -62,7 +62,7 @@ async function GroupPageContent({ params }: { params: Promise<{ groupId: string 
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+          className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:scale-[0.98] transition-all"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard

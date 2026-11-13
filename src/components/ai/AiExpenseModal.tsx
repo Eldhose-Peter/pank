@@ -474,7 +474,12 @@ export function AiExpenseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all">
+    <div 
+      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleDiscard();
+      }}
+    >
       <div 
         className="w-full max-w-2xl rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in slide-in-from-bottom-4 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -517,7 +522,7 @@ export function AiExpenseModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-6">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1 pb-4 sm:pb-6">
           {error && (
             <div className="flex items-start justify-between gap-2.5 rounded-xl bg-red-50 p-3.5 text-xs text-red-600 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-900/50 animate-in fade-in">
               <div className="flex items-start gap-2.5 flex-1">
@@ -534,10 +539,11 @@ export function AiExpenseModal({
               <button
                 type="button"
                 onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-600 dark:hover:text-red-200 p-0.5 cursor-pointer shrink-0"
+                className="min-h-[44px] min-w-[44px] -mr-2 -mt-2 flex items-center justify-center text-red-400 hover:text-red-600 dark:hover:text-red-200 cursor-pointer shrink-0"
                 title="Dismiss"
+                aria-label="Dismiss notification"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -550,7 +556,7 @@ export function AiExpenseModal({
                 <button
                   type="button"
                   onClick={() => setInputTab('receipt')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  className={`flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     inputTab === 'receipt'
                       ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
                       : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -564,7 +570,7 @@ export function AiExpenseModal({
                 <button
                   type="button"
                   onClick={() => setInputTab('text')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  className={`flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     inputTab === 'text'
                       ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
                       : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -661,8 +667,9 @@ export function AiExpenseModal({
                         <button
                           type="button"
                           onClick={handleRemoveFile}
-                          className="rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                           title="Remove file"
+                          aria-label="Remove file"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -672,7 +679,7 @@ export function AiExpenseModal({
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+                          className="min-h-[44px] inline-flex items-center text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
                         >
                           Change receipt file
                         </button>
@@ -681,7 +688,7 @@ export function AiExpenseModal({
                           type="button"
                           onClick={() => handleParse()}
                           disabled={billParsing}
-                          className={`inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
+                          className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
                             billParsing ? 'animate-shadow-pulse pointer-events-none' : ''
                           }`}
                         >
@@ -738,14 +745,14 @@ export function AiExpenseModal({
                     />
 
                     {/* Bottom Action Bar */}
-                    <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/70 px-3 py-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/70 p-2.5 gap-2.5">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {/* Voice Mic Button */}
                         <button
                           type="button"
                           onClick={handleMicToggle}
                           disabled={parsing || voiceParsing}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer ${
+                          className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer ${
                             isVoiceActive
                               ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
                               : voiceParsing
@@ -755,19 +762,19 @@ export function AiExpenseModal({
                         >
                           {isVoiceActive ? (
                             <>
-                              <MicOff className="h-3.5 w-3.5" />
+                              <MicOff className="h-4 w-4" />
                               <span>{voiceMode === 'browser' ? 'Listening...' : 'Stop Rec'}</span>
                             </>
                           ) : (
                             <>
-                              <Mic className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+                              <Mic className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
                               <span>Speak</span>
                             </>
                           )}
                         </button>
 
                         {/* Voice Engine Toggle */}
-                        <div className="inline-flex items-center rounded-lg bg-zinc-200/70 dark:bg-zinc-800 p-0.5 text-[10px] font-medium">
+                        <div className="inline-flex items-center rounded-xl bg-zinc-200/70 dark:bg-zinc-800 p-0.5 text-xs font-medium min-h-[44px]">
                           <button
                             type="button"
                             onClick={() => {
@@ -775,7 +782,7 @@ export function AiExpenseModal({
                               setVoiceMode('browser');
                             }}
                             disabled={isVoiceActive}
-                            className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                            className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
                               voiceMode === 'browser'
                                 ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold'
                                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -790,7 +797,7 @@ export function AiExpenseModal({
                               setVoiceMode('gemini');
                             }}
                             disabled={isVoiceActive}
-                            className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                            className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
                               voiceMode === 'gemini'
                                 ? 'bg-white dark:bg-zinc-700 text-violet-600 dark:text-violet-400 shadow-xs font-bold'
                                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -806,7 +813,7 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleParse()}
                         disabled={parsing || voiceParsing || !promptText.trim()}
-                        className={`inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
+                        className={`inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
                           parsing ? 'animate-shadow-pulse pointer-events-none' : ''
                         }`}
                       >
@@ -817,7 +824,7 @@ export function AiExpenseModal({
                           </>
                         ) : (
                           <>
-                            <Sparkles className="h-3.5 w-3.5" />
+                            <Sparkles className="h-4 w-4" />
                             <span>Extract Draft</span>
                           </>
                         )}
@@ -842,7 +849,7 @@ export function AiExpenseModal({
                       <button
                         type="button"
                         onClick={handleMicToggle}
-                        className="font-bold underline hover:no-underline text-xs cursor-pointer"
+                        className="font-bold underline hover:no-underline text-xs min-h-[44px] flex items-center px-2 cursor-pointer"
                       >
                         {voiceMode === 'browser' ? 'Done' : 'Process Audio'}
                       </button>
@@ -873,7 +880,7 @@ export function AiExpenseModal({
                             setPromptText(p);
                             handleParse(p);
                           }}
-                          className="rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] px-2.5 py-1 text-left transition-colors cursor-pointer"
+                          className="min-h-[44px] flex items-center rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs px-3.5 py-2 text-left transition-colors cursor-pointer"
                         >
                           {p}
                         </button>
@@ -937,14 +944,14 @@ export function AiExpenseModal({
                               key={opt.value}
                               type="button"
                               onClick={() => handleClarificationChange(q.id, opt.value)}
-                              className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium border text-left transition-all cursor-pointer ${
+                              className={`flex min-h-[44px] items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-medium border text-left transition-all cursor-pointer ${
                                 clarificationAnswers[q.id] === opt.value
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
                                   : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-amber-400'
                               }`}
                             >
                               <span>{opt.label}</span>
-                              {clarificationAnswers[q.id] === opt.value && <Check className="h-3.5 w-3.5 ml-1" />}
+                              {clarificationAnswers[q.id] === opt.value && <Check className="h-4 w-4 ml-1" />}
                             </button>
                           ))}
                         </div>
@@ -957,9 +964,9 @@ export function AiExpenseModal({
                       type="button"
                       onClick={handleApplyClarifications}
                       disabled={updating || Object.keys(clarificationAnswers).length === 0}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
+                      className="w-full inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      {updating ? <ShadowPulseDot /> : <Check className="h-3.5 w-3.5" />}
+                      {updating ? <ShadowPulseDot /> : <Check className="h-4 w-4" />}
                       <span>Apply Clarifications</span>
                     </button>
                   ) : (
@@ -969,7 +976,7 @@ export function AiExpenseModal({
                         setDraft(null);
                         setClarificationAnswers({});
                       }}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 px-4 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300 transition-colors cursor-pointer"
+                      className="w-full inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 px-4 py-2.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300 transition-colors cursor-pointer"
                     >
                       Reset Draft & Try Again
                     </button>
@@ -988,7 +995,7 @@ export function AiExpenseModal({
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full min-h-[40px] text-base sm:text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
+                          className="w-full min-h-[44px] text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                       <div>
@@ -998,7 +1005,7 @@ export function AiExpenseModal({
                           step="0.01"
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
-                          className="w-full min-h-[40px] text-base sm:text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500 font-mono"
+                          className="w-full min-h-[44px] text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500 font-mono"
                         />
                       </div>
                     </div>
@@ -1006,7 +1013,7 @@ export function AiExpenseModal({
                       <button
                         type="button"
                         onClick={() => setIsEditing(false)}
-                        className="text-xs px-3 py-1.5 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                        className="min-h-[44px] flex items-center text-xs px-4 py-2 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -1014,7 +1021,7 @@ export function AiExpenseModal({
                         type="button"
                         onClick={handleSaveEdit}
                         disabled={updating}
-                        className="text-xs px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 cursor-pointer"
+                        className="min-h-[44px] flex items-center text-xs px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 cursor-pointer"
                       >
                         Save
                       </button>
@@ -1028,10 +1035,11 @@ export function AiExpenseModal({
                         <button
                           type="button"
                           onClick={() => setIsEditing(true)}
-                          className="text-zinc-400 hover:text-indigo-600 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                           title="Edit title & amount"
+                          aria-label="Edit title and amount"
                         >
-                          <Edit2 className="h-3.5 w-3.5" />
+                          <Edit2 className="h-4 w-4" />
                         </button>
                       </div>
                       <p className="text-xs text-zinc-500">
@@ -1042,7 +1050,7 @@ export function AiExpenseModal({
                           href={draft.receiptUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 mt-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800"
+                          className="inline-flex min-h-[44px] items-center gap-1.5 mt-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800"
                         >
                           <Receipt className="h-3.5 w-3.5" />
                           <span>View Attached Bill</span>
@@ -1065,7 +1073,7 @@ export function AiExpenseModal({
                     <button
                       type="button"
                       onClick={() => setShowReceiptItems((prev) => !prev)}
-                      className="flex items-center justify-between w-full text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                      className="flex min-h-[44px] items-center justify-between w-full text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-1.5">
                         <FileText className="h-4 w-4 text-indigo-500" />
@@ -1109,7 +1117,7 @@ export function AiExpenseModal({
                       <span>Step 2: Add Split Instructions (Optional)</span>
                     </div>
 
-                    <div className="inline-flex items-center rounded-lg bg-white/80 dark:bg-zinc-800 p-0.5 text-[10px] font-medium border border-violet-200 dark:border-violet-800">
+                    <div className="inline-flex items-center rounded-xl bg-white/80 dark:bg-zinc-800 p-0.5 text-xs font-medium border border-violet-200 dark:border-violet-800 min-h-[44px]">
                       <button
                         type="button"
                         onClick={() => {
@@ -1117,7 +1125,7 @@ export function AiExpenseModal({
                           setVoiceMode('browser');
                         }}
                         disabled={isVoiceActive}
-                        className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                        className={`min-h-[44px] px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                           voiceMode === 'browser'
                             ? 'bg-violet-600 text-white font-bold'
                             : 'text-zinc-500'
@@ -1132,7 +1140,7 @@ export function AiExpenseModal({
                           setVoiceMode('gemini');
                         }}
                         disabled={isVoiceActive}
-                        className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                        className={`min-h-[44px] px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                           voiceMode === 'gemini'
                             ? 'bg-violet-600 text-white font-bold'
                             : 'text-zinc-500'
@@ -1148,44 +1156,46 @@ export function AiExpenseModal({
                   </p>
 
                   {/* Input row with Mic and Update button */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleMicToggle}
-                      disabled={refining || voiceParsing}
-                      title={
-                        isVoiceActive
-                          ? 'Stop recording'
-                          : `Speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini Voice'}`
-                      }
-                      className={`h-10 w-10 flex items-center justify-center rounded-xl border transition-all shrink-0 cursor-pointer ${
-                        isVoiceActive
-                          ? 'bg-red-500 text-white animate-pulse border-red-500'
-                          : 'border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40 bg-white dark:bg-zinc-900'
-                      }`}
-                    >
-                      {isVoiceActive ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    </button>
-
-                    <input
-                      type="text"
-                      value={refineText}
-                      onChange={(e) => setRefineText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && refineText.trim()) {
-                          handleRefineDraft();
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="flex items-center gap-2 flex-1">
+                      <button
+                        type="button"
+                        onClick={handleMicToggle}
+                        disabled={refining || voiceParsing}
+                        title={
+                          isVoiceActive
+                            ? 'Stop recording'
+                            : `Speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini Voice'}`
                         }
-                      }}
-                      placeholder="e.g. Alice had pizza, Bob had pasta, split drinks equally"
-                      disabled={refining || voiceParsing}
-                      className="flex-1 min-h-[44px] text-base sm:text-xs rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
-                    />
+                        className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border transition-all shrink-0 cursor-pointer ${
+                          isVoiceActive
+                            ? 'bg-red-500 text-white animate-pulse border-red-500'
+                            : 'border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40 bg-white dark:bg-zinc-900'
+                        }`}
+                      >
+                        {isVoiceActive ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                      </button>
+
+                      <input
+                        type="text"
+                        value={refineText}
+                        onChange={(e) => setRefineText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && refineText.trim()) {
+                            handleRefineDraft();
+                          }
+                        }}
+                        placeholder="e.g. Alice had pizza, Bob had pasta..."
+                        disabled={refining || voiceParsing}
+                        className="flex-1 min-h-[44px] text-base sm:text-sm rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+                      />
+                    </div>
 
                     <button
                       type="button"
                       onClick={() => handleRefineDraft()}
                       disabled={refining || voiceParsing || !refineText.trim()}
-                      className={`min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
+                      className={`min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
                         refining ? 'animate-shadow-pulse pointer-events-none' : ''
                       }`}
                     >
@@ -1196,7 +1206,7 @@ export function AiExpenseModal({
                         </>
                       ) : (
                         <>
-                          <Check className="h-3.5 w-3.5" />
+                          <Check className="h-4 w-4" />
                           <span>Update Split</span>
                         </>
                       )}
@@ -1209,7 +1219,7 @@ export function AiExpenseModal({
                       type="button"
                       onClick={() => handleRefineDraft('Split equally between everyone')}
                       disabled={refining}
-                      className="text-[10px] font-medium rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2.5 py-1 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
+                      className="text-xs min-h-[44px] flex items-center font-medium rounded-xl bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-3.5 py-2 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
                     >
                       Split equally between everyone
                     </button>
@@ -1218,7 +1228,7 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleRefineDraft(`Split 50-50 between ${members[0]?.displayName} and ${members[1]?.displayName}`)}
                         disabled={refining}
-                        className="text-[10px] font-medium rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2.5 py-1 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
+                        className="text-xs min-h-[44px] flex items-center font-medium rounded-xl bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-3.5 py-2 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
                       >
                         Split 50-50 between {members[0]?.displayName} & {members[1]?.displayName}
                       </button>
@@ -1228,7 +1238,7 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleRefineDraft(`${members[1]?.displayName} had ${draft.receiptItems![0].name}, split rest equally`)}
                         disabled={refining}
-                        className="text-[10px] font-medium rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2.5 py-1 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
+                        className="text-xs min-h-[44px] flex items-center font-medium rounded-xl bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-3.5 py-2 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
                       >
                         {members[1]?.displayName} had {draft.receiptItems[0].name}
                       </button>
@@ -1266,44 +1276,45 @@ export function AiExpenseModal({
                   </div>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={handleDiscard}
-                  className="min-h-[44px] flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer order-2 sm:order-1"
-                >
-                  Discard
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleConfirmDraft}
-                  disabled={confirming || draft.status !== 'ready_for_review'}
-                  title={
-                    draft.status !== 'ready_for_review'
-                      ? 'Please answer clarification questions or refine split first'
-                      : 'Confirm and save expense to database'
-                  }
-                  className={`min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer order-1 sm:order-2 ${
-                    confirming ? 'animate-shadow-pulse-emerald pointer-events-none' : ''
-                  }`}
-                >
-                  {confirming ? (
-                    <>
-                      <ShadowPulseDot />
-                      <span>Saving to Database...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      <span>Confirm & Save Expense</span>
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
+          )}
+        </div>
+
+        {/* Modal Footer with Safe Area Support */}
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+          <button
+            type="button"
+            onClick={handleDiscard}
+            className="min-h-[44px] rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            {draft ? 'Discard' : 'Close'}
+          </button>
+          {draft && (
+            <button
+              type="button"
+              onClick={handleConfirmDraft}
+              disabled={confirming || draft.status !== 'ready_for_review'}
+              title={
+                draft.status !== 'ready_for_review'
+                  ? 'Please answer clarification questions or refine split first'
+                  : 'Confirm and save expense to database'
+              }
+              className={`min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer ${
+                confirming ? 'animate-shadow-pulse-emerald pointer-events-none' : ''
+              }`}
+            >
+              {confirming ? (
+                <>
+                  <ShadowPulseDot />
+                  <span>Saving to Database...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span>Confirm & Save Expense</span>
+                </>
+              )}
+            </button>
           )}
         </div>
       </div>

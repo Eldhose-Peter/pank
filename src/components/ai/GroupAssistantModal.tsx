@@ -104,7 +104,12 @@ export function GroupAssistantModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all">
+    <div 
+      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div 
         className="w-full max-w-xl rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 overflow-hidden flex flex-col h-[650px] max-h-[92vh] animate-in fade-in slide-in-from-bottom-4 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -183,14 +188,14 @@ export function GroupAssistantModal({
 
         {/* Quick prompt suggestions */}
         <div className="px-4 sm:px-6 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-950/40 shrink-0">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-[11px]">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
             {quickQuestions.map((q, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSend(q)}
                 disabled={loading}
-                className="whitespace-nowrap min-h-[36px] rounded-lg bg-white dark:bg-zinc-800 px-3 py-1.5 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 active:scale-[0.98] transition-all shrink-0 cursor-pointer shadow-2xs"
+                className="whitespace-nowrap min-h-[44px] rounded-xl bg-white dark:bg-zinc-800 px-3.5 py-2 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 active:scale-[0.98] transition-all shrink-0 cursor-pointer shadow-2xs font-medium"
               >
                 {q}
               </button>

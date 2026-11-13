@@ -267,7 +267,7 @@ export function GroupDetailClient({
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-3.5 py-5 sm:px-6 sm:py-8 lg:px-8 pb-28 sm:pb-8">
+    <div className="mx-auto max-w-7xl px-3.5 py-5 sm:px-6 sm:py-8 lg:px-8 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
       {/* Back button with subtle micro-interaction */}
       <Link
         href="/"
@@ -299,12 +299,12 @@ export function GroupDetailClient({
           )}
         </div>
 
-        {/* Action Toolbar with Clear Visual Hierarchy (desktop & tablet) */}
+        {/* Action Toolbar with Clear Visual Hierarchy */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
           {/* Secondary Action: Ask AI */}
           <button
             onClick={() => setIsAiAssistantOpen(true)}
-            className="inline-flex min-h-[40px] sm:min-h-[44px] items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 sm:px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 sm:px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Bot className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <span>Ask AI</span>
@@ -318,7 +318,7 @@ export function GroupDetailClient({
               setSettleAmount(undefined);
               setIsSettleUpOpen(true);
             }}
-            className="inline-flex min-h-[40px] sm:min-h-[44px] items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 sm:px-3.5 py-2 text-xs font-semibold text-emerald-800 shadow-xs hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 sm:px-3.5 py-2 text-xs font-semibold text-emerald-800 shadow-xs hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Handshake className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span>Settle Up</span>
@@ -327,7 +327,7 @@ export function GroupDetailClient({
           {/* Secondary Action: Invite */}
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="inline-flex min-h-[40px] sm:min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 sm:px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 sm:px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Share2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             <span>Invite</span>
@@ -336,7 +336,7 @@ export function GroupDetailClient({
           {/* Primary Action 1: Add Manually */}
           <button
             onClick={() => setIsAddExpenseOpen(true)}
-            className="inline-flex min-h-[40px] sm:min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3.5 sm:px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3.5 sm:px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Add Expense</span>
@@ -345,7 +345,7 @@ export function GroupDetailClient({
           {/* Prominent Primary CTA: Fast AI Add */}
           <button
             onClick={() => setIsAiExpenseOpen(true)}
-            className="inline-flex min-h-[40px] sm:min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-4 sm:px-4.5 py-2 text-xs font-extrabold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-lg hover:shadow-indigo-600/35 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-4 sm:px-4.5 py-2 text-xs font-extrabold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-lg hover:shadow-indigo-600/35 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Sparkles className="h-4 w-4 text-amber-300" />
             <span>Fast AI Add</span>
@@ -462,7 +462,7 @@ export function GroupDetailClient({
             }`}
           >
             <Scale className="h-4 w-4" />
-            <span>Balances & Simplified Debts</span>
+            <span>Balances<span className="hidden sm:inline"> & Simplified Debts</span></span>
             {(balances?.simplifiedDebts.length || 0) > 0 && (
               <span className="rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-2 py-0.5 text-xs font-mono font-bold">
                 {balances?.simplifiedDebts.length}

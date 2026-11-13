@@ -34,7 +34,7 @@ export function ShadowPulseDot({
 
 export function GroupDetailSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-3.5 py-5 sm:px-6 sm:py-8 lg:px-8 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
       {/* Back link placeholder */}
       <div className="h-4 w-28 rounded-lg skeleton-shimmer shadow-xs" />
 
@@ -72,7 +72,7 @@ export function GroupDetailSkeleton() {
 
       {/* Tab Navigation Skeleton */}
       <div className="mt-8 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex gap-8 pb-3">
+        <div className="flex gap-3 sm:gap-8 overflow-x-hidden pb-3">
           <div className="h-5 w-24 rounded skeleton-shimmer" />
           <div className="h-5 w-32 rounded skeleton-shimmer" />
           <div className="h-5 w-28 rounded skeleton-shimmer" />
