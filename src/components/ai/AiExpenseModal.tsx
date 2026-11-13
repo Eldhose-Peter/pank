@@ -933,15 +933,28 @@ export function AiExpenseModal({
                     </div>
                   ))}
 
-                  <button
-                    type="button"
-                    onClick={handleApplyClarifications}
-                    disabled={updating || Object.keys(clarificationAnswers).length === 0}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 transition-colors cursor-pointer"
-                  >
-                    {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    Apply Clarifications
-                  </button>
+                  {draft.clarificationQuestions.some((q) => q.options && q.options.length > 0) ? (
+                    <button
+                      type="button"
+                      onClick={handleApplyClarifications}
+                      disabled={updating || Object.keys(clarificationAnswers).length === 0}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                      Apply Clarifications
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraft(null);
+                        setClarificationAnswers({});
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 px-4 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300 transition-colors cursor-pointer"
+                    >
+                      Reset Draft & Try Again
+                    </button>
+                  )}
                 </div>
               )}
 

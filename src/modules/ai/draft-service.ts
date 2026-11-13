@@ -9,6 +9,7 @@ import type {
   ExtractedExpenseDraft,
 } from './types';
 import { calculateSplits } from '@/modules/accounting/calculations';
+import type { SplitType } from '@/modules/accounting/types';
 import { ExpenseService } from '@/modules/expenses/service';
 import {
   ForbiddenError,
@@ -16,6 +17,72 @@ import {
   ValidationError,
   GroupError,
 } from '@/modules/groups/errors';
+
+/**
+ * Normalizes participant split values for deterministic calculation across all split types.
+ * Converts major units to minor units for exact splits, ensuring values are non-negative
+ * integers and rounding pennies are cleanly balanced to totalAmountMinor.
+ */
+function prepareParticipantsForSplits(
+  splitType: SplitType,
+  totalAmountMinor: number,
+  participants: { memberId: string; splitValue?: number }[]
+): { memberId: string; splitValue?: number }[] {
+  if (!participants || participants.length === 0) return [];
+
+  if (splitType === 'exact') {
+    // 1. Determine if incoming splitValues are in major currency units (e.g. 223.33)
+    const sumRaw = participants.reduce((acc, p) => acc + (p.splitValue || 0), 0);
+    const totalMajor = totalAmountMinor / 100;
+    const hasDecimals = participants.some((p) => p.splitValue !== undefined && !Number.isInteger(p.splitValue));
+    const isMajorUnits = hasDecimals || Math.abs(sumRaw - totalMajor) < Math.abs(sumRaw - totalAmountMinor);
+
+    let converted = participants.map((p) => {
+      const raw = p.splitValue ?? 0;
+      const minor = isMajorUnits ? Math.round(raw * 100) : Math.round(raw);
+      return {
+        memberId: p.memberId,
+        splitValue: Math.max(0, minor),
+      };
+    });
+
+    // 2. Adjust any small penny/paise rounding difference so sum equals totalAmountMinor exactly
+    const currentSum = converted.reduce((acc, p) => acc + (p.splitValue || 0), 0);
+    const diff = totalAmountMinor - currentSum;
+
+    if (diff !== 0 && Math.abs(diff) <= Math.max(100, converted.length * 10)) {
+      let maxIdx = 0;
+      for (let i = 1; i < converted.length; i++) {
+        if ((converted[i].splitValue || 0) > (converted[maxIdx].splitValue || 0)) {
+          maxIdx = i;
+        }
+      }
+      converted[maxIdx].splitValue = Math.max(0, (converted[maxIdx].splitValue || 0) + diff);
+    }
+
+    return converted;
+  }
+
+  if (splitType === 'shares') {
+    return participants.map((p) => ({
+      memberId: p.memberId,
+      splitValue: Math.max(1, Math.round(p.splitValue || 1)),
+    }));
+  }
+
+  if (splitType === 'percentage') {
+    return participants.map((p) => ({
+      memberId: p.memberId,
+      splitValue: Number(p.splitValue || 0),
+    }));
+  }
+
+  // Equal
+  return participants.map((p) => ({
+    memberId: p.memberId,
+    splitValue: 1,
+  }));
+}
 
 export class DraftService {
   private gemini: GeminiAIClient;
@@ -201,13 +268,19 @@ export class DraftService {
     // If all participants resolved and amount > 0, compute splits deterministically
     if (status === 'ready_for_review' && resolution.resolvedParticipants.length > 0 && amountMinor > 0) {
       try {
-        const splits = calculateSplits(
+        const preparedParticipants = prepareParticipantsForSplits(
           extracted.splitType,
           amountMinor,
           resolution.resolvedParticipants.map((p) => ({
             memberId: p.groupMemberId,
             splitValue: p.splitValue,
           }))
+        );
+
+        const splits = calculateSplits(
+          extracted.splitType,
+          amountMinor,
+          preparedParticipants
         );
 
         computedSplits = splits.map((s) => ({
@@ -217,12 +290,30 @@ export class DraftService {
           owedAmount: s.owedAmount,
         }));
       } catch (calcError) {
-        status = 'pending_clarification';
-        clarificationQuestions.push({
-          id: 'q-calc-error',
-          type: 'ambiguous_split',
-          question: (calcError as Error).message || 'Split calculation requires adjustment.',
-        });
+        try {
+          const fallbackSplits = calculateSplits(
+            'equal',
+            amountMinor,
+            resolution.resolvedParticipants.map((p) => ({ memberId: p.groupMemberId, splitValue: 1 }))
+          );
+          computedSplits = fallbackSplits.map((s) => ({
+            groupMemberId: s.memberId,
+            displayName: memberMap.get(s.memberId) || 'Unknown',
+            splitValue: s.splitValue,
+            owedAmount: s.owedAmount,
+          }));
+          extracted.splitType = 'equal';
+        } catch {
+          status = 'pending_clarification';
+          clarificationQuestions.push({
+            id: 'q-calc-error',
+            type: 'ambiguous_split',
+            question: 'Could not divide this expense with the given split values. How should it be split?',
+            options: [
+              { label: 'Split equally between all participants', value: 'split_equal' },
+            ],
+          });
+        }
       }
     }
 
@@ -433,10 +524,16 @@ export class DraftService {
 
     if (participantList.length > 0 && newAmount > 0) {
       try {
-        const splits = calculateSplits(
+        const preparedParticipants = prepareParticipantsForSplits(
           newSplitType,
           newAmount,
           participantList.map((p) => ({ memberId: p.groupMemberId, splitValue: p.splitValue }))
+        );
+
+        const splits = calculateSplits(
+          newSplitType,
+          newAmount,
+          preparedParticipants
         );
 
         computedSplits = splits.map((s) => ({
@@ -628,13 +725,19 @@ export class DraftService {
 
     if (status === 'ready_for_review' && resolution.resolvedParticipants.length > 0 && amountMinor > 0) {
       try {
-        const splits = calculateSplits(
+        const preparedParticipants = prepareParticipantsForSplits(
           refined.splitType,
           amountMinor,
           resolution.resolvedParticipants.map((p) => ({
             memberId: p.groupMemberId,
             splitValue: p.splitValue,
           }))
+        );
+
+        const splits = calculateSplits(
+          refined.splitType,
+          amountMinor,
+          preparedParticipants
         );
 
         computedSplits = splits.map((s) => ({
@@ -644,12 +747,30 @@ export class DraftService {
           owedAmount: s.owedAmount,
         }));
       } catch (calcError) {
-        status = 'pending_clarification';
-        clarificationQuestions.push({
-          id: 'q-calc-error',
-          type: 'ambiguous_split',
-          question: (calcError as Error).message || 'Split calculation requires adjustment.',
-        });
+        try {
+          const fallbackSplits = calculateSplits(
+            'equal',
+            amountMinor,
+            resolution.resolvedParticipants.map((p) => ({ memberId: p.groupMemberId, splitValue: 1 }))
+          );
+          computedSplits = fallbackSplits.map((s) => ({
+            groupMemberId: s.memberId,
+            displayName: memberMap.get(s.memberId) || 'Unknown',
+            splitValue: s.splitValue,
+            owedAmount: s.owedAmount,
+          }));
+          refined.splitType = 'equal';
+        } catch {
+          status = 'pending_clarification';
+          clarificationQuestions.push({
+            id: 'q-calc-error',
+            type: 'ambiguous_split',
+            question: 'Could not divide this expense with the given split values. How should it be split?',
+            options: [
+              { label: 'Split equally between all participants', value: 'split_equal' },
+            ],
+          });
+        }
       }
     }
 
