@@ -7,23 +7,21 @@ import {
   AlertCircle, 
   Check, 
   HelpCircle, 
-  ArrowRight, 
   Loader2, 
-  Receipt,
-  User,
-  PlusCircle,
-  Trash2,
-  Edit2,
-  Mic,
-  MicOff,
-  Zap,
-  Volume2,
-  Camera,
-  FileText,
-  ExternalLink,
-  UploadCloud,
-  CheckCircle2,
+  Receipt, 
+  Trash2, 
+  Edit2, 
+  Mic, 
+  MicOff, 
+  Zap, 
+  Camera, 
+  FileText, 
+  ExternalLink, 
+  UploadCloud, 
+  CheckCircle2, 
   MessageSquare,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import type { ExpenseDraftPreview, ClarificationQuestion } from '@/modules/ai/types';
@@ -122,13 +120,23 @@ export function AiExpenseModal({
   const [voiceMode, setVoiceMode] = useState<VoiceMode>('browser');
   const [voiceParsing, setVoiceParsing] = useState(false);
 
+  // Helper to sanitize cryptic browser media errors into actionable messages
+  const sanitizeErrorMessage = (msg: string): string => {
+    if (
+      msg.includes('navigator.mediaDevices.getUserMedia') ||
+      msg.includes('undefined is not an object') ||
+      msg.includes('getUserMedia')
+    ) {
+      return 'Microphone access is blocked by your browser on insecure HTTP (LAN/IP address). Please access the app using "http://localhost:3000" or enable HTTPS.';
+    }
+    return msg;
+  };
+
   // Phase 1: Web Speech API (browser-native, free)
   const {
     isListening,
     isSupported: webSpeechSupported,
-    transcript: interimTranscript,
     toggleListening: toggleWebSpeech,
-    stopListening: stopWebSpeech,
   } = useVoiceInput({
     lang: 'en-IN',
     onResult: (text) => {
@@ -138,20 +146,17 @@ export function AiExpenseModal({
         setPromptText((prev) => (prev ? `${prev} ${text}` : text));
       }
     },
-    onError: (err) => setError(err),
+    onError: (err) => setError(sanitizeErrorMessage(err)),
   });
 
   // Phase 2: Gemini multimodal audio (records blob, sends to backend)
   const {
     isRecording,
-    isSupported: recorderSupported,
     startRecording,
     stopRecording,
   } = useAudioRecorder({
-    onError: (err) => setError(err),
+    onError: (err) => setError(sanitizeErrorMessage(err)),
   });
-
-  const voiceSupported = webSpeechSupported || recorderSupported;
 
   const handleGeminiVoiceStop = useCallback(async () => {
     const audioBlob = await stopRecording();
@@ -196,7 +201,7 @@ export function AiExpenseModal({
         setClarificationAnswers({});
       }
     } catch (err: any) {
-      setError(err.message || 'Error processing voice input');
+      setError(sanitizeErrorMessage(err.message || 'Error processing voice input'));
     } finally {
       setVoiceParsing(false);
     }
@@ -204,25 +209,36 @@ export function AiExpenseModal({
 
   const handleMicToggle = useCallback(async () => {
     setError(null);
+
+    // Guard against insecure HTTP context (e.g. LAN access http://192.168.x.x:3000 or http://*.local)
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      setError(
+        'Microphone access is blocked by your browser on insecure HTTP (LAN/IP address). Please access the app using "http://localhost:3000" or enable HTTPS.'
+      );
+      return;
+    }
+
     if (voiceMode === 'browser') {
       if (!webSpeechSupported) {
-        // Fallback to Gemini voice if browser lacks Web Speech API
         setError('Browser speech is not supported in this browser. Switching to Gemini AI mode...');
         setVoiceMode('gemini');
         try {
           await startRecording();
         } catch (err: any) {
-          setError(err.message || 'Microphone access failed');
+          setError(sanitizeErrorMessage(err.message || 'Microphone access failed'));
         }
         return;
       }
       toggleWebSpeech();
     } else {
-      // Gemini mode: toggle recording
       if (isRecording) {
         await handleGeminiVoiceStop();
       } else {
-        await startRecording();
+        try {
+          await startRecording();
+        } catch (err: any) {
+          setError(sanitizeErrorMessage(err.message || 'Microphone access failed'));
+        }
       }
     }
   }, [voiceMode, webSpeechSupported, toggleWebSpeech, isRecording, handleGeminiVoiceStop, startRecording]);
@@ -342,13 +358,11 @@ export function AiExpenseModal({
     setError(null);
 
     try {
-      // Collect resolved member choices
       const resolvedParticipantIds = [...draft.splits.map((s) => s.groupMemberId)];
       
       for (const [qId, val] of Object.entries(clarificationAnswers)) {
         if (val.startsWith('create_placeholder:')) {
           const rawName = val.replace('create_placeholder:', '');
-          // Create placeholder member
           const memberRes = await fetch(`/api/groups/${groupId}/members`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -363,7 +377,6 @@ export function AiExpenseModal({
         }
       }
 
-      // Update the draft
       const updateRes = await fetch(`/api/groups/${groupId}/ai/drafts/${draft.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -452,122 +465,105 @@ export function AiExpenseModal({
     }
     setDraft(null);
     setPromptText('');
+    setRefineText('');
     handleRemoveFile();
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 px-6 py-4 bg-zinc-50/50 dark:bg-zinc-900/50">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-500/20">
+        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 bg-zinc-50/70 dark:bg-zinc-900/60">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-500/20">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                Fast Natural Language Expense
-                <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[10px] font-semibold px-2 py-0.5 border border-indigo-200 dark:border-indigo-800">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                  AI Expense Splitter
+                </h2>
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[10px] font-semibold px-2 py-0.5 border border-indigo-200 dark:border-indigo-800">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Gemini Flash
                 </span>
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Type, speak, or upload a bill to extract and split automatically
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Scan receipts or speak in plain English to split automatically
               </p>
             </div>
           </div>
+
           <button
             onClick={handleDiscard}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            className="rounded-xl p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            title="Close"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5">
+        <div className="p-6 overflow-y-auto space-y-5 flex-1">
           {error && (
-            <div className="flex items-start gap-2.5 rounded-xl bg-red-50 p-3.5 text-xs text-red-600 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-900/50">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <div className="flex-1">{error}</div>
+            <div className="flex items-start justify-between gap-2.5 rounded-xl bg-red-50 p-3.5 text-xs text-red-600 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-900/50 animate-in fade-in">
+              <div className="flex items-start gap-2.5 flex-1">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
+                <div className="space-y-1 leading-relaxed">
+                  <div className="font-medium">{error}</div>
+                  {error.includes('insecure HTTP') && (
+                    <div className="text-[11px] text-zinc-600 dark:text-zinc-400 pt-0.5">
+                      💡 <strong>Tip:</strong> If accessing from a phone or other device on your Wi-Fi, run Next.js with HTTPS: <code className="bg-red-100/70 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[10px]">npm run dev -- --experimental-https</code>, or access directly via <code className="bg-red-100/70 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[10px]">http://localhost:3000</code>.
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-600 dark:hover:text-red-200 p-0.5 cursor-pointer shrink-0"
+                title="Dismiss"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
 
           {/* Mode Selection and Inputs (shown when no draft) */}
           {!draft && (
             <div className="space-y-4">
-              {/* Header with Tab Selectors and Voice Toggle */}
-              <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setInputTab('receipt')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      inputTab === 'receipt'
-                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                        : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-                    }`}
-                  >
-                    <Receipt className="h-4 w-4" />
-                    <span>Scan Bill / Receipt</span>
-                    {selectedFile && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
-                  </button>
+              {/* Segmented Tab Switcher */}
+              <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
+                <button
+                  type="button"
+                  onClick={() => setInputTab('receipt')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    inputTab === 'receipt'
+                      ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <Receipt className="h-4 w-4" />
+                  <span>Scan Receipt / Bill</span>
+                  {selectedFile && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setInputTab('text')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      inputTab === 'text'
-                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                        : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-                    }`}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    <span>Text & Voice Prompt</span>
-                  </button>
-                </div>
-
-                {/* Voice Engine Toggle */}
-                <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[11px] font-medium border border-zinc-200 dark:border-zinc-700">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isVoiceActive) return;
-                      setVoiceMode('browser');
-                    }}
-                    disabled={isVoiceActive}
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 transition-all ${
-                      voiceMode === 'browser'
-                        ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold'
-                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                    } disabled:opacity-60`}
-                    title="Browser-native Speech Recognition (Free, Instant)"
-                  >
-                    <Zap className="h-3 w-3" />
-                    Browser
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isVoiceActive) return;
-                      setVoiceMode('gemini');
-                    }}
-                    disabled={isVoiceActive}
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 transition-all ${
-                      voiceMode === 'gemini'
-                        ? 'bg-white dark:bg-zinc-700 text-violet-600 dark:text-violet-400 shadow-sm font-semibold'
-                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                    } disabled:opacity-60`}
-                    title="Gemini Multimodal Voice"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Gemini AI
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setInputTab('text')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    inputTab === 'text'
+                      ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Type or Speak Expense</span>
+                </button>
               </div>
 
               {/* File Upload Hidden Input */}
@@ -581,13 +577,13 @@ export function AiExpenseModal({
 
               {/* TAB 1: SCAN BILL / RECEIPT (STEP 1) */}
               {inputTab === 'receipt' && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/70 dark:border-indigo-900/40 px-3.5 py-2 text-xs text-indigo-900 dark:text-indigo-200">
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-2.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/50 px-3.5 py-2.5 text-xs text-indigo-900 dark:text-indigo-200">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shrink-0">
                       1
                     </span>
-                    <span>
-                      <strong className="font-semibold">Step 1:</strong> Upload & scan bill to extract items and total. In Step 2, you can verify items and add split instructions.
+                    <span className="leading-snug">
+                      <strong className="font-semibold text-indigo-950 dark:text-indigo-100">Step 1: Scan Bill.</strong> Upload receipt to extract itemized line items. In Step 2, you can verify items and add custom split instructions.
                     </span>
                   </div>
 
@@ -608,14 +604,14 @@ export function AiExpenseModal({
                           handleBillUpload(syntheticEvent);
                         }
                       }}
-                      className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                      className={`border-2 border-dashed rounded-2xl py-10 px-6 text-center cursor-pointer transition-all ${
                         isDragging
                           ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/50 ring-4 ring-indigo-500/10'
-                          : 'border-zinc-300 dark:border-zinc-700 hover:border-indigo-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                          : 'border-zinc-300 dark:border-zinc-700/80 hover:border-indigo-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
                       }`}
                     >
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-3 shadow-sm">
-                        <Camera className="h-6 w-6" />
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-3.5 shadow-sm">
+                        <Camera className="h-7 w-7" />
                       </div>
                       <p className="text-sm font-bold text-zinc-900 dark:text-white">
                         Upload or snap a receipt / bill photo
@@ -623,13 +619,10 @@ export function AiExpenseModal({
                       <p className="text-xs text-zinc-500 mt-1">
                         JPEG, PNG, WebP or PDF · up to 15MB
                       </p>
-                      <button
-                        type="button"
-                        className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors cursor-pointer"
-                      >
-                        <UploadCloud className="h-3.5 w-3.5" />
-                        <span>Browse Files</span>
-                      </button>
+                      <div className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors pointer-events-none">
+                        <UploadCloud className="h-4 w-4" />
+                        <span>Select Receipt File</span>
+                      </div>
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 p-4 space-y-4">
@@ -650,7 +643,7 @@ export function AiExpenseModal({
                             <p className="text-sm font-bold text-zinc-900 dark:text-white truncate max-w-[280px]">
                               {selectedFile.name}
                             </p>
-                            <p className="text-xs text-zinc-500">
+                            <p className="text-xs text-zinc-500 mt-0.5">
                               {(selectedFile.size / 1024).toFixed(0)} KB · Ready to scan with Gemini Vision OCR
                             </p>
                           </div>
@@ -659,14 +652,14 @@ export function AiExpenseModal({
                         <button
                           type="button"
                           onClick={handleRemoveFile}
-                          className="rounded-lg p-1.5 text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          className="rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                           title="Remove file"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-indigo-100 dark:border-indigo-900/40">
+                      <div className="flex items-center justify-between pt-3 border-t border-indigo-100 dark:border-indigo-900/40">
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
@@ -698,11 +691,11 @@ export function AiExpenseModal({
                   )}
 
                   {billParsing && (
-                    <div className="flex items-center gap-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 p-3 text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in">
-                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                    <div className="flex items-center gap-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 p-3.5 text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in">
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600 shrink-0" />
                       <div>
-                        <p className="font-semibold">Extracting merchant, items, and total with Gemini Vision...</p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <p className="font-semibold">Extracting merchant, line items, and total with Gemini Vision...</p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                           Step 2 will display the verified items and let you provide custom split instructions.
                         </p>
                       </div>
@@ -713,8 +706,8 @@ export function AiExpenseModal({
 
               {/* TAB 2: TEXT & VOICE PROMPT */}
               {inputTab === 'text' && (
-                <div className="space-y-3">
-                  <div className="relative">
+                <div className="space-y-3.5">
+                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
                     <textarea
                       value={promptText}
                       onChange={(e) => setPromptText(e.target.value)}
@@ -722,51 +715,84 @@ export function AiExpenseModal({
                       placeholder={
                         isVoiceActive
                           ? voiceMode === 'browser'
-                            ? '🎤 Listening... speak your expense now'
-                            : '🎤 Recording... tap "Stop Rec" when finished'
+                            ? '🎤 Listening via Browser Speech... speak your expense now'
+                            : '🎤 Recording for Gemini AI... tap "Stop Rec" when done'
                           : 'e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun.'
                       }
-                      className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pb-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:bg-zinc-950 dark:text-white resize-none transition-colors ${
-                        isVoiceActive
-                          ? 'border-red-400 dark:border-red-600 ring-2 ring-red-500/20'
-                          : 'border-zinc-200 dark:border-zinc-800'
-                      }`}
+                      className="w-full bg-transparent p-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:text-white resize-none"
                       disabled={parsing || voiceParsing}
                     />
 
-                    <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
-                      {/* Voice Speak / Mic Button */}
-                      <button
-                        type="button"
-                        onClick={handleMicToggle}
-                        disabled={parsing || voiceParsing}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
-                          isVoiceActive
-                            ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
-                            : voiceParsing
-                            ? 'bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 border border-violet-300 dark:border-violet-800'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
-                        }`}
-                      >
-                        {isVoiceActive ? (
-                          <>
-                            <MicOff className="h-3.5 w-3.5" />
-                            <span>{voiceMode === 'browser' ? 'Listening...' : 'Stop Rec'}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Mic className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
-                            <span>Speak</span>
-                          </>
-                        )}
-                      </button>
+                    {/* Bottom Action Bar */}
+                    <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/70 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {/* Voice Mic Button */}
+                        <button
+                          type="button"
+                          onClick={handleMicToggle}
+                          disabled={parsing || voiceParsing}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer ${
+                            isVoiceActive
+                              ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
+                              : voiceParsing
+                              ? 'bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 border border-violet-300 dark:border-violet-800'
+                              : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
+                          }`}
+                        >
+                          {isVoiceActive ? (
+                            <>
+                              <MicOff className="h-3.5 w-3.5" />
+                              <span>{voiceMode === 'browser' ? 'Listening...' : 'Stop Rec'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mic className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+                              <span>Speak</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Voice Engine Toggle */}
+                        <div className="inline-flex items-center rounded-lg bg-zinc-200/70 dark:bg-zinc-800 p-0.5 text-[10px] font-medium">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isVoiceActive) return;
+                              setVoiceMode('browser');
+                            }}
+                            disabled={isVoiceActive}
+                            className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                              voiceMode === 'browser'
+                                ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold'
+                                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                            }`}
+                          >
+                            Browser
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isVoiceActive) return;
+                              setVoiceMode('gemini');
+                            }}
+                            disabled={isVoiceActive}
+                            className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                              voiceMode === 'gemini'
+                                ? 'bg-white dark:bg-zinc-700 text-violet-600 dark:text-violet-400 shadow-xs font-bold'
+                                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                            }`}
+                          >
+                            Gemini AI
+                          </button>
+                        </div>
+                      </div>
 
                       {/* Extract Draft Button */}
                       <button
                         type="button"
                         onClick={() => handleParse()}
                         disabled={parsing || voiceParsing || !promptText.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 transition-all cursor-pointer"
                       >
                         {parsing ? (
                           <>
@@ -785,7 +811,7 @@ export function AiExpenseModal({
 
                   {/* Voice Activity Feedback Bar */}
                   {isVoiceActive && (
-                    <div className="flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 animate-in fade-in">
+                    <div className="flex items-center justify-between rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 px-3.5 py-2 text-xs text-red-600 dark:text-red-400 animate-in fade-in">
                       <div className="flex items-center gap-2">
                         <span className="relative flex h-2 w-2">
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
@@ -800,7 +826,7 @@ export function AiExpenseModal({
                       <button
                         type="button"
                         onClick={handleMicToggle}
-                        className="font-bold underline hover:no-underline text-xs"
+                        className="font-bold underline hover:no-underline text-xs cursor-pointer"
                       >
                         {voiceMode === 'browser' ? 'Done' : 'Process Audio'}
                       </button>
@@ -808,7 +834,7 @@ export function AiExpenseModal({
                   )}
 
                   {voiceParsing && (
-                    <div className="flex items-center gap-2 rounded-lg bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3 py-1.5 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
+                    <div className="flex items-center gap-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3.5 py-2 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       <span className="font-medium">
                         Uploading audio to Gemini multimodal AI for transcription & split calculation...
@@ -817,7 +843,7 @@ export function AiExpenseModal({
                   )}
 
                   {/* Quick Prompt Pills */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 pt-1">
                     <span className="text-[11px] font-medium text-zinc-400">Try an example:</span>
                     <div className="flex flex-wrap gap-1.5">
                       {quickPrompts.map((p, idx) => (
@@ -842,12 +868,12 @@ export function AiExpenseModal({
 
           {/* DRAFT PREVIEW OR CLARIFICATION */}
           {draft && (
-            <div className="rounded-xl border border-indigo-100 dark:border-indigo-950 bg-indigo-50/30 dark:bg-indigo-950/20 p-4 space-y-4">
-              {/* 2-Step Progress Header for Scanned Receipts */}
+            <div className="rounded-2xl border border-indigo-100 dark:border-indigo-950/80 bg-indigo-50/20 dark:bg-indigo-950/20 p-4 sm:p-5 space-y-4">
+              {/* 2-Step Progress Stepper for Scanned Receipts */}
               {(draft.receiptItems?.length || draft.receiptUrl) && (
-                <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50/90 via-indigo-50/80 to-violet-50/90 dark:from-emerald-950/50 dark:via-indigo-950/40 dark:to-violet-950/50 border border-indigo-200/70 dark:border-indigo-900/50 p-2.5 text-xs">
+                <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50/90 via-indigo-50/80 to-violet-50/90 dark:from-emerald-950/50 dark:via-indigo-950/40 dark:to-violet-950/50 border border-indigo-200/70 dark:border-indigo-900/50 px-3.5 py-2.5 text-xs">
                   <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                     <span>Step 1: Bill Items Extracted</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-violet-700 dark:text-violet-300 font-bold">
@@ -866,7 +892,7 @@ export function AiExpenseModal({
                   <div className={`h-2.5 w-2.5 rounded-full ${
                     draft.status === 'ready_for_review' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
                   }`} />
-                  <span className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">
+                  <span className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
                     {draft.status === 'ready_for_review' ? 'Draft Ready for Review' : 'Clarification Required'}
                   </span>
                 </div>
@@ -877,24 +903,24 @@ export function AiExpenseModal({
 
               {/* Clarification Questions (if any) */}
               {draft.clarificationQuestions && draft.clarificationQuestions.length > 0 && (
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 p-3.5 space-y-3">
+                <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 p-4 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
                     <HelpCircle className="h-4 w-4" />
                     Please clarify the following:
                   </div>
                   {draft.clarificationQuestions.map((q) => (
-                    <div key={q.id} className="space-y-1.5 text-xs">
+                    <div key={q.id} className="space-y-2 text-xs">
                       <p className="font-medium text-amber-900 dark:text-amber-200">{q.question}</p>
                       {q.options && q.options.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                           {q.options.map((opt) => (
                             <button
                               key={opt.value}
                               type="button"
                               onClick={() => handleClarificationChange(q.id, opt.value)}
-                              className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium border text-left transition-all ${
+                              className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium border text-left transition-all cursor-pointer ${
                                 clarificationAnswers[q.id] === opt.value
-                                  ? 'bg-amber-600 text-white border-amber-600'
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
                                   : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-amber-400'
                               }`}
                             >
@@ -911,7 +937,7 @@ export function AiExpenseModal({
                     type="button"
                     onClick={handleApplyClarifications}
                     disabled={updating || Object.keys(clarificationAnswers).length === 0}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-amber-500 disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 transition-colors cursor-pointer"
                   >
                     {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                     Apply Clarifications
@@ -920,17 +946,17 @@ export function AiExpenseModal({
               )}
 
               {/* Draft Content Card */}
-              <div className="bg-white dark:bg-zinc-950 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 space-y-3">
+              <div className="bg-white dark:bg-zinc-950 rounded-2xl p-4 sm:p-5 border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
                 {isEditing ? (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-[11px] font-semibold text-zinc-500">Title</label>
                         <input
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 px-2.5 py-1.5 dark:bg-zinc-900"
+                          className="w-full text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                       <div>
@@ -940,15 +966,15 @@ export function AiExpenseModal({
                           step="0.01"
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
-                          className="w-full text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 px-2.5 py-1.5 dark:bg-zinc-900"
+                          className="w-full text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                     </div>
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 pt-1">
                       <button
                         type="button"
                         onClick={() => setIsEditing(false)}
-                        className="text-xs px-2.5 py-1 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="text-xs px-3 py-1.5 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -956,21 +982,21 @@ export function AiExpenseModal({
                         type="button"
                         onClick={handleSaveEdit}
                         disabled={updating}
-                        className="text-xs px-3 py-1 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500"
+                        className="text-xs px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 cursor-pointer"
                       >
                         Save
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{draft.title}</h4>
+                        <h4 className="text-base font-bold text-zinc-900 dark:text-white">{draft.title}</h4>
                         <button
                           type="button"
                           onClick={() => setIsEditing(true)}
-                          className="text-zinc-400 hover:text-indigo-600 p-0.5"
+                          className="text-zinc-400 hover:text-indigo-600 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                           title="Edit title & amount"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
@@ -984,16 +1010,16 @@ export function AiExpenseModal({
                           href={draft.receiptUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800"
+                          className="inline-flex items-center gap-1.5 mt-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800"
                         >
-                          <Receipt className="h-3 w-3" />
-                          View Attached Bill
+                          <Receipt className="h-3.5 w-3.5" />
+                          <span>View Attached Bill</span>
                           <ExternalLink className="h-2.5 w-2.5" />
                         </a>
                       )}
                     </div>
-                    <div className="text-right">
-                      <div className="text-base font-extrabold text-zinc-900 dark:text-white">
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-extrabold text-zinc-900 dark:text-white">
                         {formatMinorUnits(draft.amount, draft.currency)}
                       </div>
                       <div className="text-[11px] text-zinc-400 capitalize">{draft.splitType} split</div>
@@ -1003,25 +1029,36 @@ export function AiExpenseModal({
 
                 {/* Scanned Bill Line Items Breakdown (if present) */}
                 {draft.receiptItems && draft.receiptItems.length > 0 && (
-                  <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
                     <button
                       type="button"
                       onClick={() => setShowReceiptItems((prev) => !prev)}
-                      className="flex items-center justify-between w-full text-[11px] font-semibold text-zinc-500 uppercase tracking-wider hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                      className="flex items-center justify-between w-full text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                     >
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3.5 w-3.5 text-indigo-500" />
-                        Scanned Bill Items ({draft.receiptItems.length})
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="h-4 w-4 text-indigo-500" />
+                        <span>Scanned Bill Items ({draft.receiptItems.length})</span>
                       </span>
-                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                        {showReceiptItems ? 'Hide Items ▲' : 'Show Items ▼'}
+                      <span className="inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                        {showReceiptItems ? (
+                          <>
+                            <span>Hide Items</span>
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </>
+                        ) : (
+                          <>
+                            <span>Show Items</span>
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </>
+                        )}
                       </span>
                     </button>
+
                     {showReceiptItems && (
-                      <div className="mt-2 space-y-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 p-2 text-xs divide-y divide-zinc-200/50 dark:divide-zinc-800">
+                      <div className="space-y-1 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 p-2.5 text-xs divide-y divide-zinc-200/50 dark:divide-zinc-800/60 max-h-48 overflow-y-auto">
                         {draft.receiptItems.map((item, idx) => (
-                          <div key={idx} className="flex justify-between py-1 text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
-                            <span className="truncate pr-2">{item.name}</span>
+                          <div key={idx} className="flex justify-between items-center py-1.5 text-zinc-700 dark:text-zinc-300 first:pt-0.5 last:pb-0.5">
+                            <span className="truncate pr-3 font-medium">{item.name}</span>
                             <span className="font-semibold text-zinc-900 dark:text-white shrink-0">
                               {getCurrencySymbol(draft.currency)}{item.amount.toFixed(2)}
                             </span>
@@ -1033,22 +1070,71 @@ export function AiExpenseModal({
                 )}
 
                 {/* STEP 2: PROVIDE ADDITIONAL SPLIT INSTRUCTIONS */}
-                <div className="rounded-xl border border-violet-200 dark:border-violet-900/60 bg-gradient-to-br from-violet-50/60 via-white to-indigo-50/40 dark:from-violet-950/30 dark:via-zinc-900/50 dark:to-indigo-950/20 p-3.5 space-y-2.5">
+                <div className="rounded-xl border border-violet-200 dark:border-violet-900/60 bg-gradient-to-br from-violet-50/60 via-white to-indigo-50/40 dark:from-violet-950/30 dark:via-zinc-900/50 dark:to-indigo-950/20 p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-violet-900 dark:text-violet-200">
-                      <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    <div className="flex items-center gap-2 text-xs font-bold text-violet-900 dark:text-violet-200">
+                      <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                       <span>Step 2: Add Split Instructions (Optional)</span>
                     </div>
-                    <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">
-                      Type or speak
-                    </span>
+
+                    <div className="inline-flex items-center rounded-lg bg-white/80 dark:bg-zinc-800 p-0.5 text-[10px] font-medium border border-violet-200 dark:border-violet-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isVoiceActive) return;
+                          setVoiceMode('browser');
+                        }}
+                        disabled={isVoiceActive}
+                        className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                          voiceMode === 'browser'
+                            ? 'bg-violet-600 text-white font-bold'
+                            : 'text-zinc-500'
+                        }`}
+                      >
+                        Browser
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isVoiceActive) return;
+                          setVoiceMode('gemini');
+                        }}
+                        disabled={isVoiceActive}
+                        className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                          voiceMode === 'gemini'
+                            ? 'bg-violet-600 text-white font-bold'
+                            : 'text-zinc-500'
+                        }`}
+                      >
+                        Gemini
+                      </button>
+                    </div>
                   </div>
 
                   <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                     Verify the itemized list above. If anyone ordered specific items or ate a fraction, tell AI below:
                   </p>
 
-                  <div className="relative">
+                  {/* Input row with Mic and Update button */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleMicToggle}
+                      disabled={refining || voiceParsing}
+                      title={
+                        isVoiceActive
+                          ? 'Stop recording'
+                          : `Speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini Voice'}`
+                      }
+                      className={`h-10 w-10 flex items-center justify-center rounded-xl border transition-all shrink-0 cursor-pointer ${
+                        isVoiceActive
+                          ? 'bg-red-500 text-white animate-pulse border-red-500'
+                          : 'border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40 bg-white dark:bg-zinc-900'
+                      }`}
+                    >
+                      {isVoiceActive ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </button>
+
                     <input
                       type="text"
                       value={refineText}
@@ -1060,49 +1146,27 @@ export function AiExpenseModal({
                       }}
                       placeholder="e.g. Alice had pizza, Bob had pasta, split drinks equally"
                       disabled={refining || voiceParsing}
-                      className="w-full text-xs rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3 py-2 pr-28 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+                      className="flex-1 h-10 text-xs rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
                     />
 
-                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      {/* Mic Speak button */}
-                      <button
-                        type="button"
-                        onClick={handleMicToggle}
-                        disabled={refining || voiceParsing}
-                        title={
-                          isVoiceActive
-                            ? 'Stop recording'
-                            : `Speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini Voice'}`
-                        }
-                        className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
-                          isVoiceActive
-                            ? 'bg-red-500 text-white animate-pulse'
-                            : 'text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40'
-                        }`}
-                      >
-                        {isVoiceActive ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
-                      </button>
-
-                      {/* Apply button */}
-                      <button
-                        type="button"
-                        onClick={() => handleRefineDraft()}
-                        disabled={refining || voiceParsing || !refineText.trim()}
-                        className="inline-flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-violet-500 disabled:opacity-40 transition-colors cursor-pointer"
-                      >
-                        {refining ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>Updating...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-3 w-3" />
-                            <span>Update Split</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRefineDraft()}
+                      disabled={refining || voiceParsing || !refineText.trim()}
+                      className="h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 transition-colors cursor-pointer"
+                    >
+                      {refining ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Updating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Update Split</span>
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* Suggestion Chips */}
@@ -1111,7 +1175,7 @@ export function AiExpenseModal({
                       type="button"
                       onClick={() => handleRefineDraft('Split equally between everyone')}
                       disabled={refining}
-                      className="text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2 py-0.5 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer"
+                      className="text-[10px] font-medium rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2.5 py-1 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
                     >
                       Split equally between everyone
                     </button>
@@ -1120,7 +1184,7 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleRefineDraft(`Split 50-50 between ${members[0]?.displayName} and ${members[1]?.displayName}`)}
                         disabled={refining}
-                        className="text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2 py-0.5 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer"
+                        className="text-[10px] font-medium rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2.5 py-1 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
                       >
                         Split 50-50 between {members[0]?.displayName} & {members[1]?.displayName}
                       </button>
@@ -1130,7 +1194,7 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleRefineDraft(`${members[1]?.displayName} had ${draft.receiptItems![0].name}, split rest equally`)}
                         disabled={refining}
-                        className="text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2 py-0.5 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer"
+                        className="text-[10px] font-medium rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2.5 py-1 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer shadow-2xs"
                       >
                         {members[1]?.displayName} had {draft.receiptItems[0].name}
                       </button>
@@ -1139,24 +1203,32 @@ export function AiExpenseModal({
                 </div>
 
                 {/* Individual Shares Breakdown */}
-                <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-                  <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider flex items-center justify-between">
+                <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider flex items-center justify-between">
                     <span>Individual Shares ({draft.splits.length} participants)</span>
                     <span>Exact Share</span>
                   </div>
 
                   <div className="divide-y divide-zinc-100 dark:divide-zinc-900 text-xs">
-                    {draft.splits.map((s) => (
-                      <div key={s.groupMemberId} className="py-1.5 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 text-zinc-400" />
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200">{s.displayName}</span>
+                    {draft.splits.map((s) => {
+                      const sharePercent = draft.amount > 0 ? Math.round((s.owedAmount / draft.amount) * 100) : 0;
+                      return (
+                        <div key={s.groupMemberId} className="py-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-7 w-7 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-[11px]">
+                              {s.displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-semibold text-zinc-800 dark:text-zinc-200">{s.displayName}</span>
+                              <span className="ml-2 text-[10px] text-zinc-400 font-normal">({sharePercent}%)</span>
+                            </div>
+                          </div>
+                          <span className="font-bold text-zinc-900 dark:text-white">
+                            {formatMinorUnits(s.owedAmount, draft.currency)}
+                          </span>
                         </div>
-                        <span className="font-semibold text-zinc-900 dark:text-white">
-                          {formatMinorUnits(s.owedAmount, draft.currency)}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1166,7 +1238,7 @@ export function AiExpenseModal({
                 <button
                   type="button"
                   onClick={handleDiscard}
-                  className="rounded-xl px-3.5 py-2 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="rounded-xl px-4 py-2.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
                 >
                   Discard
                 </button>
@@ -1175,17 +1247,17 @@ export function AiExpenseModal({
                   type="button"
                   onClick={handleConfirmDraft}
                   disabled={confirming || draft.status !== 'ready_for_review'}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer"
                 >
                   {confirming ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving to Database...
+                      <span>Saving to Database...</span>
                     </>
                   ) : (
                     <>
                       <Check className="h-4 w-4" />
-                      Confirm & Save Expense
+                      <span>Confirm & Save Expense</span>
                     </>
                   )}
                 </button>

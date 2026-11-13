@@ -45,8 +45,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
   // Check support on client mount
   useEffect(() => {
+    const isSecure = typeof window !== 'undefined' ? window.isSecureContext !== false : true;
     const supported =
       typeof window !== 'undefined' &&
+      isSecure &&
       ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
     setIsSupported(supported);
 
@@ -89,11 +91,21 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       setIsListening(false);
       if (event.error !== 'aborted') {
-        onErrorRef.current?.(
-          event.error === 'not-allowed'
-            ? 'Microphone access denied. Please allow microphone permissions in your browser.'
-            : `Voice recognition error: ${event.error}`
-        );
+        if (event.error === 'not-allowed') {
+          if (typeof window !== 'undefined' && window.isSecureContext === false) {
+            onErrorRef.current?.(
+              'Microphone access is blocked on insecure HTTP. Please access using "http://localhost:3000" or HTTPS.'
+            );
+          } else {
+            onErrorRef.current?.(
+              'Microphone access denied. Please allow microphone permissions in your browser settings.'
+            );
+          }
+        } else if (event.error === 'audio-capture') {
+          onErrorRef.current?.('No microphone detected or microphone is in use by another app.');
+        } else {
+          onErrorRef.current?.(`Voice recognition error: ${event.error}`);
+        }
       }
     };
 
@@ -111,16 +123,17 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const startListening = useCallback(() => {
     if (isListening) return;
 
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      onErrorRef.current?.(
+        'Microphone is blocked by your browser on insecure HTTP (LAN/IP address). Please use "http://localhost:3000" or enable HTTPS.'
+      );
+      return;
+    }
+
     if (!recognitionRef.current) {
-      if (typeof window !== 'undefined' && window.isSecureContext === false) {
-        onErrorRef.current?.(
-          'Speech recognition is blocked on insecure HTTP. Please use http://localhost:3000 or HTTPS.'
-        );
-      } else {
-        onErrorRef.current?.(
-          'Browser speech recognition is not supported in this browser. Please use Chrome/Edge or switch to Gemini AI mode.'
-        );
-      }
+      onErrorRef.current?.(
+        'Browser speech recognition is not supported in this browser. Please switch to Gemini AI mode or use Chrome/Edge.'
+      );
       return;
     }
 
@@ -130,7 +143,19 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       setIsListening(true);
     } catch (e: any) {
       setIsListening(false);
-      onErrorRef.current?.(e.message || 'Could not start speech recognition');
+      const errMsg = e?.message || '';
+      if (
+        (typeof window !== 'undefined' && window.isSecureContext === false) ||
+        errMsg.includes('navigator.mediaDevices.getUserMedia') ||
+        errMsg.includes('undefined is not an object') ||
+        errMsg.includes('getUserMedia')
+      ) {
+        onErrorRef.current?.(
+          'Microphone is blocked on insecure HTTP. Please use "http://localhost:3000" or enable HTTPS to use voice.'
+        );
+      } else {
+        onErrorRef.current?.(errMsg || 'Could not start speech recognition');
+      }
     }
   }, [isListening]);
 

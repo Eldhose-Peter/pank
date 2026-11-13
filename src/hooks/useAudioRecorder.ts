@@ -20,7 +20,14 @@ interface UseAudioRecorderReturn {
  * (modern MediaDevices, WebKit/legacy prefixes, and secure context detection).
  */
 async function getMediaStream(constraints: MediaStreamConstraints): Promise<MediaStream> {
-  // 1. Modern standard navigator.mediaDevices.getUserMedia
+  // 1. Check for insecure context first (HTTP on IP address like http://192.168.x.x:3000 or http://tecra.local:3000)
+  if (typeof window !== 'undefined' && window.isSecureContext === false) {
+    throw new Error(
+      'Microphone access is blocked by your browser on insecure HTTP (LAN/IP address). Please access the app using "http://localhost:3000" or enable HTTPS.'
+    );
+  }
+
+  // 2. Modern standard navigator.mediaDevices.getUserMedia
   if (
     typeof navigator !== 'undefined' &&
     navigator.mediaDevices &&
@@ -29,7 +36,7 @@ async function getMediaStream(constraints: MediaStreamConstraints): Promise<Medi
     return await navigator.mediaDevices.getUserMedia(constraints);
   }
 
-  // 2. Legacy vendor-prefixed getUserMedia (WebKit / Safari / older mobile)
+  // 3. Legacy vendor-prefixed getUserMedia (WebKit / Safari / older mobile)
   const nav = typeof navigator !== 'undefined' ? (navigator as any) : null;
   const legacyGetUserMedia =
     nav &&
@@ -42,13 +49,6 @@ async function getMediaStream(constraints: MediaStreamConstraints): Promise<Medi
     return new Promise<MediaStream>((resolve, reject) => {
       legacyGetUserMedia.call(navigator, constraints, resolve, reject);
     });
-  }
-
-  // 3. Check for insecure context (HTTP on IP address like http://192.168.x.x:3000)
-  if (typeof window !== 'undefined' && window.isSecureContext === false) {
-    throw new Error(
-      'Microphone access is blocked by your browser on insecure HTTP. Please access the app using "http://localhost:3000" or enable HTTPS.'
-    );
   }
 
   throw new Error(
@@ -73,8 +73,10 @@ export function useAudioRecorder(
   const activeMimeTypeRef = useRef<string>('audio/webm');
 
   useEffect(() => {
+    const isSecure = typeof window !== 'undefined' ? window.isSecureContext !== false : true;
     const hasMedia =
       typeof navigator !== 'undefined' &&
+      isSecure &&
       (!!navigator.mediaDevices?.getUserMedia ||
         !!(navigator as any).webkitGetUserMedia ||
         !!(navigator as any).mozGetUserMedia ||
@@ -167,6 +169,12 @@ export function useAudioRecorder(
         message = 'Microphone permission was denied. Please allow microphone access in your browser.';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         message = 'No microphone device was detected on your system.';
+      } else if (
+        message.includes('getUserMedia') ||
+        message.includes('undefined is not an object') ||
+        (typeof window !== 'undefined' && window.isSecureContext === false)
+      ) {
+        message = 'Microphone access is blocked by your browser on insecure HTTP (LAN/IP address). Please access the app using "http://localhost:3000" or enable HTTPS.';
       }
       onError?.(message);
     }
