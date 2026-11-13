@@ -56,18 +56,18 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-3.5 py-6 sm:px-6 sm:py-10 lg:px-8">
       {/* Header with Visual Hierarchy & Negative Space */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 pb-8 dark:border-zinc-800">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 pb-6 sm:pb-8 dark:border-zinc-800">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
             Dashboard Overview
           </div>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+          <h1 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
             Welcome back, {user.fullName}
           </h1>
-          <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl leading-relaxed">
+          <p className="mt-1.5 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl leading-relaxed">
             Manage your shared expenses, track live balances, and settle debts with deterministic zero-sum precision.
           </p>
         </div>
@@ -77,7 +77,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
             setInitialGroupName('');
             setIsCreateModalOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-600/30 active:scale-[0.98] transition-all shrink-0 cursor-pointer"
+          className="inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-600/30 active:scale-[0.98] transition-all shrink-0 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Create New Group
@@ -85,15 +85,15 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
       </div>
 
       {/* Metric Cards with generous internal whitespace & soft shadows */}
-      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all duration-200">
+      <div className="mt-6 sm:mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 sm:p-6 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all duration-200">
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Active Groups</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
               <Users className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-4 text-3xl font-extrabold font-mono text-zinc-900 dark:text-white">
+          <div className="mt-3 sm:mt-4 text-2xl sm:text-3xl font-extrabold font-mono text-zinc-900 dark:text-white">
             {groups.length}
           </div>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -101,14 +101,14 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all duration-200">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 sm:p-6 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all duration-200">
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Accounting Engine</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
               <Calculator className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-base font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="mt-3 sm:mt-4 flex items-center gap-1.5 text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>Deterministic 64-bit Paired Math</span>
           </div>
@@ -117,14 +117,14 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all duration-200">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 sm:p-6 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all duration-200">
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
             <span className="text-xs font-semibold uppercase tracking-wider">AI Copilot</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
               <Sparkles className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-base font-bold text-zinc-900 dark:text-white">
+          <div className="mt-3 sm:mt-4 flex items-center gap-1.5 text-sm sm:text-base font-bold text-zinc-900 dark:text-white">
             <Zap className="h-4 w-4 text-purple-500" />
             <span>Gemini 2.5 Flash Multimodal</span>
           </div>
@@ -135,10 +135,10 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
       </div>
 
       {/* Groups List Section */}
-      <div className="mt-12">
+      <div className="mt-10 sm:mt-12">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
               Your Expense Groups
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -152,20 +152,20 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
 
         {groups.length === 0 ? (
           /* Optimized Onboarding & Empty State */
-          <div className="mt-6 rounded-3xl border border-zinc-200/80 bg-white p-10 sm:p-14 shadow-lg shadow-zinc-200/40 text-center dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25">
-              <Receipt className="h-8 w-8" />
+          <div className="mt-6 rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-14 shadow-lg shadow-zinc-200/40 text-center dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+            <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25">
+              <Receipt className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
 
-            <h3 className="mt-6 text-xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-2xl">
+            <h3 className="mt-5 sm:mt-6 text-lg sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
               Start Your First Expense Group
             </h3>
-            <p className="mx-auto mt-2 max-w-lg text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            <p className="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
               Create a shared space for your trip, apartment, or outing. Track multi-payer bills, custom splits, and let our engine calculate minimal transactions to settle up.
             </p>
 
             {/* 3 Step Visual Guide */}
-            <div className="mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-4 text-left sm:grid-cols-3">
+            <div className="mx-auto mt-6 sm:mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:gap-4 text-left sm:grid-cols-3">
               <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 font-bold text-xs dark:bg-indigo-950 dark:text-indigo-300">
                   1
@@ -204,30 +204,30 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
             </div>
 
             {/* Quick Inspiration Pills */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs">
-              <span className="font-medium text-zinc-400">Quick ideas:</span>
+            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-2 text-xs">
+              <span className="font-medium text-zinc-400 w-full sm:w-auto text-center">Quick ideas:</span>
               {[
                 { label: '🏖️ Goa Vacation', preset: 'Goa Vacation 2026' },
-                { label: '🏠 Apartment Rent & Bills', preset: 'Flat 402 Expenses' },
+                { label: '🏠 Flat 402 Rent & Bills', preset: 'Flat 402 Expenses' },
                 { label: '🍽️ Weekend Dinner Club', preset: 'Weekend Dinners' },
               ].map((item, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleQuickCreate(item.preset)}
-                  className="rounded-full border border-zinc-200 bg-white px-3 py-1 font-medium text-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-indigo-500 transition-colors cursor-pointer shadow-2xs"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-zinc-200 bg-white px-3.5 py-2 font-medium text-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-indigo-500 transition-colors cursor-pointer shadow-2xs"
                 >
                   {item.label}
                 </button>
               ))}
             </div>
 
-            <div className="mt-8 flex justify-center">
+            <div className="mt-6 sm:mt-8 flex justify-center">
               <button
                 onClick={() => {
                   setInitialGroupName('');
                   setIsCreateModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/25 hover:bg-indigo-500 hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/25 hover:bg-indigo-500 hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Create Your First Group
@@ -235,24 +235,24 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
             </div>
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (
               <Link
                 key={group.id}
                 href={`/groups/${group.id}`}
-                className="group relative flex flex-col justify-between rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-200/40 hover:-translate-y-1 hover:border-indigo-500/80 hover:shadow-xl hover:shadow-indigo-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-indigo-500 transition-all duration-200"
+                className="group relative flex flex-col justify-between rounded-2xl border border-zinc-200/80 bg-white p-5 sm:p-6 shadow-sm shadow-zinc-200/40 hover:-translate-y-1 hover:border-indigo-500/80 hover:shadow-xl hover:shadow-indigo-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-indigo-500 transition-all duration-200 min-h-[140px]"
               >
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold font-mono text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
                       {group.currency}
                     </span>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-50 group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:bg-zinc-800 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400 text-zinc-400 transition-colors">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-50 group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:bg-zinc-800 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400 text-zinc-400 transition-colors">
                       <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </div>
 
-                  <h3 className="mt-4 text-lg font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {group.name}
                   </h3>
                   {group.description ? (
@@ -266,7 +266,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
                   )}
                 </div>
 
-                <div className="mt-8 flex items-center justify-between border-t border-zinc-100 pt-4 text-xs text-zinc-500 dark:border-zinc-800">
+                <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-zinc-100 pt-3.5 sm:pt-4 text-xs text-zinc-500 dark:border-zinc-800">
                   <span className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5 text-zinc-400" />
                     View Ledger & Splits

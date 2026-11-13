@@ -61,17 +61,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast, success, error, info }}>
       {children}
-      {/* Toast viewport */}
+      {/* Toast viewport with safe-area and sticky bar clearance */}
       <aside
         aria-label="Notifications"
         aria-live="polite"
-        className="fixed bottom-5 inset-x-4 sm:inset-x-auto sm:right-5 sm:max-w-sm sm:w-full z-50 flex flex-col gap-2.5 pointer-events-none"
+        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 sm:max-w-sm sm:w-full z-50 flex flex-col gap-2 pointer-events-none"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             role="status"
-            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${
+            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border p-3.5 sm:p-4 shadow-xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${
               toast.type === 'success'
                 ? 'border-emerald-200 bg-white/95 text-emerald-950 dark:border-emerald-900/60 dark:bg-zinc-900/95 dark:text-emerald-100 shadow-emerald-500/10'
                 : toast.type === 'error'
@@ -110,10 +110,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
             <button
               onClick={() => removeToast(toast.id)}
-              className="shrink-0 rounded-lg p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              className="shrink-0 -mr-1.5 -mt-1.5 rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
               title="Dismiss notification"
+              aria-label="Dismiss notification"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         ))}

@@ -55,16 +55,16 @@ function JoinGroupContent({ token }: { token: string }) {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200/80 bg-white p-8 sm:p-10 shadow-xl shadow-zinc-200/40 text-center dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/10 dark:bg-indigo-950 dark:text-indigo-400">
-          <Share2 className="h-8 w-8" />
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-3.5 py-8 sm:px-6 sm:py-16">
+      <div className="w-full max-w-md rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-10 shadow-xl shadow-zinc-200/40 text-center dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+        <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/10 dark:bg-indigo-950 dark:text-indigo-400">
+          <Share2 className="h-7 w-7 sm:h-8 sm:w-8" />
         </div>
 
-        <h2 className="mt-5 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+        <h2 className="mt-4 sm:mt-5 text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
           Group Invitation
         </h2>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+        <p className="mt-2 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
           You have been invited to join an expense sharing group on Pank. Accept the invitation to view balances and split bills together.
         </p>
 
@@ -83,11 +83,11 @@ function JoinGroupContent({ token }: { token: string }) {
             <span className="font-semibold text-sm">Joined group successfully! Redirecting...</span>
           </div>
         ) : (
-          <div className="mt-8 space-y-4">
+          <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
             <button
               onClick={handleAccept}
               disabled={loading}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer ${
+              className={`flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer ${
                 loading ? 'animate-shadow-pulse pointer-events-none' : ''
               }`}
             >
@@ -106,7 +106,7 @@ function JoinGroupContent({ token }: { token: string }) {
 
             <Link
               href="/"
-              className="inline-block text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors"
+              className="inline-flex min-h-[44px] items-center justify-center text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors"
             >
               Decline and return to home
             </Link>

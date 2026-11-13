@@ -474,20 +474,25 @@ export function AiExpenseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/60 p-0 sm:p-4 backdrop-blur-md transition-all">
       <div 
-        className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in slide-in-from-bottom-4 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Pull Handle */}
+        <div className="pt-3 pb-1 flex justify-center sm:hidden">
+          <div className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 bg-zinc-50/70 dark:bg-zinc-900/60">
+        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-50/70 dark:bg-zinc-900/60 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-500/20">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-500/20">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white">
                   AI Expense Splitter
                 </h2>
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[10px] font-semibold px-2 py-0.5 border border-indigo-200 dark:border-indigo-800">
@@ -503,15 +508,16 @@ export function AiExpenseModal({
 
           <button
             onClick={handleDiscard}
-            className="rounded-xl p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
             title="Close"
+            aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-6">
           {error && (
             <div className="flex items-start justify-between gap-2.5 rounded-xl bg-red-50 p-3.5 text-xs text-red-600 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-900/50 animate-in fade-in">
               <div className="flex items-start gap-2.5 flex-1">
@@ -727,7 +733,7 @@ export function AiExpenseModal({
                             : '🎤 Recording for Gemini AI... tap "Stop Rec" when done'
                           : 'e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun.'
                       }
-                      className="w-full bg-transparent p-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:text-white resize-none"
+                      className="w-full bg-transparent p-3.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:text-white resize-none"
                       disabled={parsing || voiceParsing}
                     />
 
@@ -982,7 +988,7 @@ export function AiExpenseModal({
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
+                          className="w-full min-h-[40px] text-base sm:text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                       <div>
@@ -992,7 +998,7 @@ export function AiExpenseModal({
                           step="0.01"
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
-                          className="w-full text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
+                          className="w-full min-h-[40px] text-base sm:text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500 font-mono"
                         />
                       </div>
                     </div>
@@ -1172,14 +1178,14 @@ export function AiExpenseModal({
                       }}
                       placeholder="e.g. Alice had pizza, Bob had pasta, split drinks equally"
                       disabled={refining || voiceParsing}
-                      className="flex-1 h-10 text-xs rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+                      className="flex-1 min-h-[44px] text-base sm:text-xs rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
                     />
 
                     <button
                       type="button"
                       onClick={() => handleRefineDraft()}
                       disabled={refining || voiceParsing || !refineText.trim()}
-                      className={`h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
+                      className={`min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
                         refining ? 'animate-shadow-pulse pointer-events-none' : ''
                       }`}
                     >
@@ -1262,11 +1268,11 @@ export function AiExpenseModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={handleDiscard}
-                  className="rounded-xl px-4 py-2.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                  className="min-h-[44px] flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer order-2 sm:order-1"
                 >
                   Discard
                 </button>
@@ -1280,7 +1286,7 @@ export function AiExpenseModal({
                       ? 'Please answer clarification questions or refine split first'
                       : 'Confirm and save expense to database'
                   }
-                  className={`inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer ${
+                  className={`min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer order-1 sm:order-2 ${
                     confirming ? 'animate-shadow-pulse-emerald pointer-events-none' : ''
                   }`}
                 >
