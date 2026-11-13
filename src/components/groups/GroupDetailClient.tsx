@@ -18,7 +18,11 @@ import {
   ChevronUp, 
   CheckCircle2,
   Sparkles,
-  Bot
+  Bot,
+  ArrowRight,
+  TrendingUp,
+  CreditCard,
+  Layers
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
@@ -27,6 +31,7 @@ import { AddMemberModal } from '@/components/groups/AddMemberModal';
 import { InviteModal } from '@/components/groups/InviteModal';
 import { AiExpenseModal } from '@/components/ai/AiExpenseModal';
 import { GroupAssistantModal } from '@/components/ai/GroupAssistantModal';
+import { useToast } from '@/components/ui/Toast';
 
 interface GroupData {
   id: string;
@@ -127,6 +132,7 @@ export function GroupDetailClient({
   currentUserId,
 }: GroupDetailClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const [group, setGroup] = useState<GroupData>(initialGroup);
   const [members, setMembers] = useState<MemberData[]>(initialMembers);
   const [expenses, setExpenses] = useState<ExpenseItem[]>(initialExpenses);
@@ -187,6 +193,7 @@ export function GroupDetailClient({
       }
     } catch (err) {
       console.error('Error refreshing group data:', err);
+      toast.error('Failed to refresh latest group data');
     } finally {
       setLoadingExtras(false);
     }
@@ -198,17 +205,22 @@ export function GroupDetailClient({
     }
   }, [groupId]);
 
-  const handleDeleteExpense = async (expenseId: string) => {
-    if (!confirm('Are you sure you want to delete this expense?')) return;
+  const handleDeleteExpense = async (expenseId: string, expenseTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${expenseTitle}"?`)) return;
     try {
       const res = await fetch(`/api/groups/${groupId}/expenses/${expenseId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
+        toast.success(`Deleted expense "${expenseTitle}"`);
         loadAllData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to delete expense');
       }
     } catch (err) {
       console.error('Delete expense error:', err);
+      toast.error('Failed to delete expense');
     }
   };
 
@@ -219,10 +231,15 @@ export function GroupDetailClient({
         method: 'DELETE',
       });
       if (res.ok) {
+        toast.success('Settlement reverted and debts restored');
         loadAllData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to revert settlement');
       }
     } catch (err) {
       console.error('Delete settlement error:', err);
+      toast.error('Failed to revert settlement');
     }
   };
 
@@ -240,43 +257,49 @@ export function GroupDetailClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Back button */}
+      {/* Back button with subtle micro-interaction */}
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+        className="group inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
       >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to Groups
+        <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+        Back to All Groups
       </Link>
 
-      {/* Group Header */}
-      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 pb-6 dark:border-zinc-800">
+      {/* Group Header with Strict Visual Hierarchy & Generous Whitespace */}
+      <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b border-zinc-200/80 pb-8 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
               {group.name}
             </h1>
-            <span className="rounded-md bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+            <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold font-mono text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60 shadow-2xs">
               {group.currency}
             </span>
           </div>
-          {group.description && (
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          {group.description ? (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl leading-relaxed">
               {group.description}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-zinc-400 italic">
+              {members.length} members sharing expenses
             </p>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Action Toolbar with Clear Visual Hierarchy */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* Secondary Action: Ask AI */}
           <button
             onClick={() => setIsAiAssistantOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3.5 py-2.5 text-xs font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Bot className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            Ask AI
+            <span>Ask AI</span>
           </button>
 
+          {/* Secondary Action: Settle Up */}
           <button
             onClick={() => {
               setSettlePayerId(undefined);
@@ -284,157 +307,208 @@ export function GroupDetailClient({
               setSettleAmount(undefined);
               setIsSettleUpOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 shadow-xs hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 active:scale-[0.98] transition-all cursor-pointer"
           >
-            <Handshake className="h-4 w-4 text-emerald-600" />
-            Settle Up
+            <Handshake className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Settle Up</span>
           </button>
 
+          {/* Secondary Action: Invite */}
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
           >
-            <Share2 className="h-4 w-4 text-purple-600" />
-            Invite
+            <Share2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <span>Invite</span>
           </button>
 
+          {/* Primary Action 1: Add Manually */}
           <button
             onClick={() => setIsAddExpenseOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-xs font-bold text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            Add Manually
+            <span>Add Expense</span>
           </button>
 
+          {/* Prominent Primary CTA: Fast AI Add */}
           <button
             onClick={() => setIsAiExpenseOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-4.5 py-2.5 text-xs font-extrabold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-lg hover:shadow-indigo-600/35 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Sparkles className="h-4 w-4 text-amber-300" />
-            Fast AI Add
+            <span>Fast AI Add</span>
           </button>
         </div>
       </div>
 
-      {/* Metric Highlights */}
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <span className="text-xs font-medium text-zinc-500">Total Group Spending</span>
-          <div className="mt-1 text-xl font-bold font-mono text-zinc-900 dark:text-white">
+      {/* Metric Highlights with Generous Padding & Soft Shadows */}
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
+          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Group Total</span>
+            <TrendingUp className="h-4 w-4 text-indigo-500" />
+          </div>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-zinc-900 dark:text-white">
             {formatMinorUnits(balances?.totalGroupSpending || 0, group.currency)}
           </div>
+          <p className="mt-1 text-[11px] text-zinc-400">Total spending across all bills</p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <span className="text-xs font-medium text-zinc-500">Expenses Logged</span>
-          <div className="mt-1 text-xl font-bold text-zinc-900 dark:text-white">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
+          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Expenses</span>
+            <Receipt className="h-4 w-4 text-purple-500" />
+          </div>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-zinc-900 dark:text-white">
             {expenses.length}
           </div>
+          <p className="mt-1 text-[11px] text-zinc-400">Logged in this ledger</p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <span className="text-xs font-medium text-zinc-500">Total Members</span>
-          <div className="mt-1 text-xl font-bold text-zinc-900 dark:text-white">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
+          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Members</span>
+            <Users className="h-4 w-4 text-blue-500" />
+          </div>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-zinc-900 dark:text-white">
             {members.length}
           </div>
+          <p className="mt-1 text-[11px] text-zinc-400">Participants in group</p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <span className="text-xs font-medium text-zinc-500">Simplified Debts</span>
-          <div className="mt-1 text-xl font-bold text-indigo-600 dark:text-indigo-400">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
+          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Active Debts</span>
+            <Scale className="h-4 w-4 text-emerald-500" />
+          </div>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-indigo-600 dark:text-indigo-400">
             {balances?.simplifiedDebts.length || 0}
           </div>
+          <p className="mt-1 text-[11px] text-zinc-400">Simplified min-cash-flow paths</p>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="mt-8 border-b border-zinc-200 dark:border-zinc-800">
-        <nav className="flex space-x-6">
+      {/* Tab Navigation with Clear Active State & Whitespace */}
+      <div className="mt-10 border-b border-zinc-200 dark:border-zinc-800">
+        <nav className="flex space-x-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('expenses')}
-            className={`flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 border-b-2 pb-3.5 text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'expenses'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             <Receipt className="h-4 w-4" />
-            Expenses ({expenses.length})
+            <span>Expenses</span>
+            <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-mono">
+              {expenses.length}
+            </span>
           </button>
 
           <button
             onClick={() => setActiveTab('balances')}
-            className={`flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 border-b-2 pb-3.5 text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'balances'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             <Scale className="h-4 w-4" />
-            Balances & Debts
+            <span>Balances & Simplified Debts</span>
+            {(balances?.simplifiedDebts.length || 0) > 0 && (
+              <span className="rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-2 py-0.5 text-xs font-mono font-bold">
+                {balances?.simplifiedDebts.length}
+              </span>
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('settlements')}
-            className={`flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 border-b-2 pb-3.5 text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'settlements'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             <Handshake className="h-4 w-4" />
-            Settlements ({settlements.length})
+            <span>Settlements</span>
+            <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-mono">
+              {settlements.length}
+            </span>
           </button>
 
           <button
             onClick={() => setActiveTab('members')}
-            className={`flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 border-b-2 pb-3.5 text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'members'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             <Users className="h-4 w-4" />
-            Members ({members.length})
+            <span>Members</span>
+            <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-mono">
+              {members.length}
+            </span>
           </button>
         </nav>
       </div>
 
-      {/* Tab 1: Expenses */}
+      {/* TAB 1: EXPENSES */}
       {activeTab === 'expenses' && (
-        <div className="mt-6 space-y-3">
+        <div className="mt-8 space-y-4">
           {loadingExtras && expenses.length === 0 ? (
-            <div className="space-y-3">
+            /* Shadow Skeleton for loading instead of spinner */
+            <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="animate-pulse rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  className="rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm shadow-zinc-200/40 dark:border-zinc-800 dark:bg-zinc-900"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="flex items-center gap-4">
+                      <div className="h-11 w-11 rounded-xl skeleton-shimmer shadow-xs" />
                       <div className="space-y-2">
-                        <div className="h-4 w-32 rounded bg-zinc-200 dark:bg-zinc-800" />
-                        <div className="h-3 w-48 rounded bg-zinc-100 dark:bg-zinc-800" />
+                        <div className="h-4 w-40 rounded skeleton-shimmer" />
+                        <div className="h-3 w-56 rounded skeleton-shimmer" />
                       </div>
                     </div>
-                    <div className="h-5 w-20 rounded bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="h-6 w-24 rounded-lg skeleton-shimmer shadow-xs" />
                   </div>
                 </div>
               ))}
             </div>
           ) : expenses.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
-              <Receipt className="mx-auto h-8 w-8 text-zinc-400" />
-              <h3 className="mt-2 text-sm font-semibold text-zinc-900 dark:text-white">No expenses recorded yet</h3>
-              <p className="mt-1 text-xs text-zinc-500">Record a bill or expense to start tracking splits.</p>
-              <button
-                onClick={() => setIsAddExpenseOpen(true)}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                Add First Expense
-              </button>
+            /* Optimized Empty State with Clear CTAs */
+            <div className="rounded-3xl border border-zinc-200/80 bg-white p-10 sm:p-14 text-center shadow-lg shadow-zinc-200/40 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/10 dark:bg-indigo-950 dark:text-indigo-400">
+                <Receipt className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                No expenses logged yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Record your first bill to see the deterministic accounting engine split expenses, calculate pairwise debts, and update balances.
+              </p>
+
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => setIsAiExpenseOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] transition-all cursor-pointer w-full sm:w-auto"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-300" />
+                  <span>Scan Receipt / Fast AI Add</span>
+                </button>
+                <button
+                  onClick={() => setIsAddExpenseOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-5 py-2.5 text-xs font-bold text-zinc-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 active:scale-[0.98] transition-all cursor-pointer w-full sm:w-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Manually</span>
+                </button>
+              </div>
             </div>
           ) : (
             expenses.map((expense) => {
@@ -445,53 +519,55 @@ export function GroupDetailClient({
               return (
                 <div
                   key={expense.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 transition-colors"
+                  className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/30 hover:-translate-y-0.5 hover:shadow-md hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 transition-all duration-200"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 shadow-2xs">
                         <Receipt className="h-5 w-5" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
+                        <h4 className="text-base font-bold text-zinc-900 dark:text-white">
                           {expense.title}
                         </h4>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Calendar className="h-3.5 w-3.5 text-zinc-400" />
                             {expense.expenseDate}
                           </span>
                           <span>•</span>
                           <span>
-                            Paid by <strong className="text-zinc-700 dark:text-zinc-300">{payerName}</strong>
+                            Paid by <strong className="font-semibold text-zinc-800 dark:text-zinc-200">{payerName}</strong>
                           </span>
                           <span>•</span>
-                          <span className="capitalize">{expense.splitType} split</span>
+                          <span className="rounded-md bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 font-medium text-zinc-600 dark:text-zinc-300 capitalize text-[11px]">
+                            {expense.splitType} split
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-base font-bold font-mono text-zinc-900 dark:text-white">
+                        <div className="text-lg font-bold font-mono text-zinc-900 dark:text-white">
                           {formatMinorUnits(expense.amount, expense.currency)}
                         </div>
                         <div className="text-xs text-zinc-400">
-                          {expense.splits.length} participants
+                          {expense.splits.length} {expense.splits.length === 1 ? 'participant' : 'participants'}
                         </div>
                       </div>
 
                       <button
                         onClick={() => setExpandedExpenseId(isExpanded ? null : expense.id)}
-                        className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-                        title="View details"
+                        className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 active:scale-[0.95] transition-all cursor-pointer"
+                        title={isExpanded ? 'Hide split breakdown' : 'Show split breakdown'}
                       >
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
 
                       <button
-                        onClick={() => handleDeleteExpense(expense.id)}
-                        className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors cursor-pointer"
+                        onClick={() => handleDeleteExpense(expense.id, expense.title)}
+                        className="rounded-xl p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 active:scale-[0.95] transition-all cursor-pointer"
                         title="Delete expense"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -501,20 +577,20 @@ export function GroupDetailClient({
 
                   {/* Expandable splits breakdown */}
                   {isExpanded && (
-                    <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                        Split Breakdown
+                    <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800/80">
+                      <div className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
+                        Participant Split Breakdown
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                         {expense.splits.map((s) => (
                           <div
-                            key={s.id}
-                            className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-1.5 text-xs dark:bg-zinc-800/60"
+                            key={s.id || s.groupMemberId}
+                            className="flex items-center justify-between rounded-xl bg-zinc-50/80 px-3.5 py-2 text-xs border border-zinc-100 dark:border-zinc-800 dark:bg-zinc-850/60"
                           >
-                            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                               {getMemberName(s.groupMemberId)}
                             </span>
-                            <span className="font-mono text-zinc-900 dark:text-white">
+                            <span className="font-mono font-bold text-zinc-900 dark:text-white">
                               owes {formatMinorUnits(s.owedAmount, expense.currency)}
                             </span>
                           </div>
@@ -529,58 +605,71 @@ export function GroupDetailClient({
         </div>
       )}
 
-      {/* Tab 2: Balances & Simplified Debts */}
+      {/* TAB 2: BALANCES & SIMPLIFIED DEBTS */}
       {activeTab === 'balances' && (
-        <div className="mt-6 space-y-8">
+        <div className="mt-8 space-y-10">
           {/* Simplified Pairwise Debts */}
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                <h3 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
                   Simplified Debts (Minimum Transactions)
                 </h3>
-                <p className="text-xs text-zinc-500">
-                  Greedy cash-flow reduction eliminates redundant cycles.
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Greedy cash-flow reduction eliminates redundant circular payment cycles.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold dark:text-emerald-400">
-                <CheckCircle2 className="h-4 w-4" />
-                Zero-sum guaranteed
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700 font-bold dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Zero-sum Paired Math Guaranteed</span>
               </div>
             </div>
 
             {loadingExtras && !balances ? (
-              <div className="mt-3 animate-pulse rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900">
-                Calculating balances and debts...
+              /* Shadow skeleton */
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 skeleton-shimmer">
+                    <div className="h-12 rounded-xl" />
+                  </div>
+                ))}
               </div>
             ) : balances?.simplifiedDebts.length === 0 ? (
-              <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
-                All debts are settled! No payments are owed.
+              <div className="mt-5 rounded-2xl border border-emerald-200/70 bg-emerald-50/40 p-8 text-center dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60 dark:text-emerald-300">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <h4 className="mt-3 text-base font-bold text-zinc-900 dark:text-white">
+                  All Debts Settled!
+                </h4>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  There are no outstanding debts between members in this group.
+                </p>
               </div>
             ) : (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {balances?.simplifiedDebts.map((debt, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                    className="flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/30 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 transition-all"
                   >
                     <div>
-                      <div className="text-sm text-zinc-800 dark:text-zinc-200">
-                        <strong className="text-red-600 dark:text-red-400">{debt.fromDisplayName}</strong>
+                      <div className="text-sm text-zinc-800 dark:text-zinc-200 font-medium">
+                        <strong className="text-red-600 dark:text-red-400 font-bold">{debt.fromDisplayName}</strong>
                         {' owes '}
-                        <strong className="text-emerald-600 dark:text-emerald-400">{debt.toDisplayName}</strong>
+                        <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{debt.toDisplayName}</strong>
                       </div>
-                      <div className="mt-1 text-base font-bold font-mono text-zinc-900 dark:text-white">
+                      <div className="mt-1.5 text-xl font-extrabold font-mono text-zinc-900 dark:text-white">
                         {formatMinorUnits(debt.amount, debt.currency)}
                       </div>
                     </div>
 
                     <button
                       onClick={() => openQuickSettle(debt.fromMemberId, debt.toMemberId, debt.amount)}
-                      className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 hover:bg-emerald-500 active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      <Handshake className="h-3.5 w-3.5" />
-                      Settle
+                      <Handshake className="h-4 w-4" />
+                      <span>Settle Up</span>
                     </button>
                   </div>
                 ))}
@@ -590,47 +679,47 @@ export function GroupDetailClient({
 
           {/* Member Net Balances Table */}
           <div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+            <h3 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
               Member Net Balances
             </h3>
-            <p className="text-xs text-zinc-500 mb-3">
-              Total paid vs. total share owed per member.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 mb-4">
+              Total paid into expenses vs total share of expenses per member.
             </p>
 
-            <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <table className="min-w-full divide-y divide-zinc-200 text-left text-sm dark:divide-zinc-800">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-semibold uppercase text-zinc-500">
+                <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-bold uppercase tracking-wider text-zinc-500">
                   <tr>
-                    <th className="px-4 py-3">Member</th>
-                    <th className="px-4 py-3">Total Paid</th>
-                    <th className="px-4 py-3">Total Share</th>
-                    <th className="px-4 py-3 text-right">Net Balance</th>
+                    <th className="px-5 py-3.5">Member</th>
+                    <th className="px-5 py-3.5">Total Paid</th>
+                    <th className="px-5 py-3.5">Total Share Owed</th>
+                    <th className="px-5 py-3.5 text-right">Net Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                   {balances && Object.values(balances.balances).map((mb) => {
                     const isPositive = mb.netBalance > 0;
                     const isZero = mb.netBalance === 0;
 
                     return (
-                      <tr key={mb.memberId} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
-                        <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-white">
-                          {mb.displayName}
+                      <tr key={mb.memberId} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 transition-colors">
+                        <td className="px-5 py-4 font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                          <span>{mb.displayName}</span>
                           {mb.isPlaceholder && (
-                            <span className="ml-2 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800">
+                            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800">
                               Placeholder
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 font-mono text-zinc-600 dark:text-zinc-400">
+                        <td className="px-5 py-4 font-mono font-medium text-zinc-600 dark:text-zinc-400">
                           {formatMinorUnits(mb.totalPaid, group.currency)}
                         </td>
-                        <td className="px-4 py-3 font-mono text-zinc-600 dark:text-zinc-400">
+                        <td className="px-5 py-4 font-mono font-medium text-zinc-600 dark:text-zinc-400">
                           {formatMinorUnits(mb.totalOwed, group.currency)}
                         </td>
-                        <td className="px-4 py-3 text-right font-mono font-bold">
+                        <td className="px-5 py-4 text-right font-mono font-bold text-sm">
                           {isZero ? (
-                            <span className="text-zinc-400">Settled</span>
+                            <span className="text-zinc-400 font-medium">Settled (0.00)</span>
                           ) : isPositive ? (
                             <span className="text-emerald-600 dark:text-emerald-400">
                               +{formatMinorUnits(mb.netBalance, group.currency)}
@@ -651,10 +740,18 @@ export function GroupDetailClient({
         </div>
       )}
 
-      {/* Tab 3: Settlements */}
+      {/* TAB 3: SETTLEMENTS */}
       {activeTab === 'settlements' && (
-        <div className="mt-6 space-y-4">
-          <div className="flex justify-end">
+        <div className="mt-8 space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+                Settled Payments
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Payments made between members to reconcile balances.
+              </p>
+            </div>
             <button
               onClick={() => {
                 setSettlePayerId(undefined);
@@ -662,42 +759,60 @@ export function GroupDetailClient({
                 setSettleAmount(undefined);
                 setIsSettleUpOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 hover:bg-emerald-500 active:scale-[0.98] transition-all cursor-pointer"
             >
               <Handshake className="h-4 w-4" />
-              Record Settlement
+              <span>Record Settlement</span>
             </button>
           </div>
 
           {loadingExtras && settlements.length === 0 ? (
             <div className="space-y-3">
               {[1, 2].map((i) => (
-                <div key={i} className="animate-pulse rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                  <div className="h-10 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+                <div key={i} className="rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 skeleton-shimmer">
+                  <div className="h-10 w-full" />
                 </div>
               ))}
             </div>
           ) : settlements.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
-              <Handshake className="mx-auto h-8 w-8 text-zinc-400" />
-              <h3 className="mt-2 text-sm font-semibold text-zinc-900 dark:text-white">No settlements recorded yet</h3>
-              <p className="mt-1 text-xs text-zinc-500">Record payments made between members to settle up debts.</p>
+            <div className="rounded-3xl border border-zinc-200/80 bg-white p-10 sm:p-14 text-center shadow-lg shadow-zinc-200/40 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                <Handshake className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                No settlements recorded yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                When someone repays a friend via UPI, cash, or bank transfer, record it here to offset debts.
+              </p>
+              <button
+                onClick={() => {
+                  setSettlePayerId(undefined);
+                  setSettlePayeeId(undefined);
+                  setSettleAmount(undefined);
+                  setIsSettleUpOpen(true);
+                }}
+                className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Handshake className="h-4 w-4" />
+                <span>Record First Settlement</span>
+              </button>
             </div>
           ) : (
             settlements.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/30 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 transition-all"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
                     <Handshake className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    <div className="text-sm font-bold text-zinc-900 dark:text-white">
                       <strong>{getMemberName(s.payerMemberId)}</strong> paid <strong>{getMemberName(s.payeeMemberId)}</strong>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
                       <span>{new Date(s.settledAt).toLocaleDateString()}</span>
                       {s.paymentMethod && <span>• {s.paymentMethod}</span>}
                       {s.notes && <span>• &ldquo;{s.notes}&rdquo;</span>}
@@ -705,13 +820,13 @@ export function GroupDetailClient({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-base text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center gap-4">
+                  <span className="font-mono font-bold text-lg text-emerald-600 dark:text-emerald-400">
                     {formatMinorUnits(s.amount, s.currency)}
                   </span>
                   <button
                     onClick={() => handleDeleteSettlement(s.id)}
-                    className="rounded-lg p-1.5 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                    className="rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 dark:hover:text-red-400 active:scale-[0.95] transition-all cursor-pointer"
                     title="Revert settlement"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -723,41 +838,51 @@ export function GroupDetailClient({
         </div>
       )}
 
-      {/* Tab 4: Members */}
+      {/* TAB 4: MEMBERS */}
       {activeTab === 'members' && (
-        <div className="mt-6 space-y-4">
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setIsInviteOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 cursor-pointer"
-            >
-              <Share2 className="h-4 w-4 text-purple-600" />
-              Invite Friends
-            </button>
-            <button
-              onClick={() => setIsAddMemberOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors cursor-pointer"
-            >
-              <UserPlus className="h-4 w-4" />
-              Add Friend
-            </button>
+        <div className="mt-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+                Group Members ({members.length})
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Friends in this group who participate in bill splitting.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setIsInviteOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Share2 className="h-4 w-4 text-purple-600" />
+                <span>Invite Friends</span>
+              </button>
+              <button
+                onClick={() => setIsAddMemberOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Add Friend</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-200/30 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 transition-all"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 font-bold text-sm dark:bg-indigo-950 dark:text-indigo-300">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 font-bold text-sm dark:bg-indigo-950 dark:text-indigo-300 shadow-2xs">
                     {m.displayName.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-white">
                       {m.displayName}
                     </div>
-                    <div className="text-xs text-zinc-400 capitalize">
+                    <div className="text-xs text-zinc-400 capitalize mt-0.5">
                       {m.role} {m.isPlaceholder ? '• Placeholder' : '• Registered User'}
                     </div>
                   </div>

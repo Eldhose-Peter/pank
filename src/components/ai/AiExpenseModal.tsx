@@ -7,7 +7,6 @@ import {
   AlertCircle, 
   Check, 
   HelpCircle, 
-  Loader2, 
   Receipt, 
   Trash2, 
   Edit2, 
@@ -27,6 +26,8 @@ import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import type { ExpenseDraftPreview, ClarificationQuestion } from '@/modules/ai/types';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useToast } from '@/components/ui/Toast';
+import { ShadowPulseDot } from '@/components/ui/ShadowLoader';
 
 interface GroupMember {
   id: string;
@@ -52,6 +53,7 @@ export function AiExpenseModal({
   members,
   onExpenseAdded,
 }: AiExpenseModalProps) {
+  const toast = useToast();
   const [promptText, setPromptText] = useState('');
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -450,6 +452,7 @@ export function AiExpenseModal({
         throw new Error(data.error || 'Failed to confirm expense');
       }
 
+      toast.success(`Expense "${draft.title}" confirmed & saved!`);
       onExpenseAdded();
       onClose();
     } catch (err: any) {
@@ -471,9 +474,9 @@ export function AiExpenseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-md animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -672,11 +675,11 @@ export function AiExpenseModal({
                           type="button"
                           onClick={() => handleParse()}
                           disabled={billParsing}
-                          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
                         >
                           {billParsing ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <ShadowPulseDot />
                               <span>Scanning & Itemizing...</span>
                             </>
                           ) : (
@@ -692,7 +695,10 @@ export function AiExpenseModal({
 
                   {billParsing && (
                     <div className="flex items-center gap-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 p-3.5 text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in">
-                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600 shrink-0" />
+                      <span className="relative flex h-2.5 w-2.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                      </span>
                       <div>
                         <p className="font-semibold">Extracting merchant, line items, and total with Gemini Vision...</p>
                         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -792,12 +798,12 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleParse()}
                         disabled={parsing || voiceParsing || !promptText.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer"
                       >
                         {parsing ? (
                           <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Parsing...</span>
+                            <ShadowPulseDot />
+                            <span>Parsing with Gemini...</span>
                           </>
                         ) : (
                           <>
@@ -835,7 +841,10 @@ export function AiExpenseModal({
 
                   {voiceParsing && (
                     <div className="flex items-center gap-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3.5 py-2 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-600 shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
+                      </span>
                       <span className="font-medium">
                         Uploading audio to Gemini multimodal AI for transcription & split calculation...
                       </span>
@@ -938,10 +947,10 @@ export function AiExpenseModal({
                       type="button"
                       onClick={handleApplyClarifications}
                       disabled={updating || Object.keys(clarificationAnswers).length === 0}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 transition-colors cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      Apply Clarifications
+                      {updating ? <ShadowPulseDot /> : <Check className="h-3.5 w-3.5" />}
+                      <span>Apply Clarifications</span>
                     </button>
                   ) : (
                     <button
@@ -1166,11 +1175,11 @@ export function AiExpenseModal({
                       type="button"
                       onClick={() => handleRefineDraft()}
                       disabled={refining || voiceParsing || !refineText.trim()}
-                      className="h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 transition-colors cursor-pointer"
+                      className="h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer"
                     >
                       {refining ? (
                         <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <ShadowPulseDot />
                           <span>Updating...</span>
                         </>
                       ) : (
@@ -1264,7 +1273,7 @@ export function AiExpenseModal({
                 >
                   {confirming ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <ShadowPulseDot />
                       <span>Saving to Database...</span>
                     </>
                   ) : (

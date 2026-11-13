@@ -14,6 +14,8 @@ import {
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import { calculateSplits } from '@/modules/accounting/calculations';
 import type { SplitType } from '@/modules/accounting/types';
+import { useToast } from '@/components/ui/Toast';
+import { ShadowPulseDot } from '@/components/ui/ShadowLoader';
 
 interface GroupMember {
   id: string;
@@ -41,6 +43,7 @@ export function AddExpenseModal({
   currentMemberId,
   onExpenseAdded,
 }: AddExpenseModalProps) {
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amountInput, setAmountInput] = useState('');
@@ -169,6 +172,7 @@ export function AddExpenseModal({
         throw new Error(data.error || 'Failed to save expense');
       }
 
+      toast.success(`Expense "${title.trim()}" added! Balances updated.`);
       onExpenseAdded();
       onClose();
     } catch (err: any) {
@@ -181,20 +185,25 @@ export function AddExpenseModal({
   const currencySymbol = getCurrencySymbol(currency);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-      <div className="my-8 w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md overflow-y-auto">
+      <div className="my-8 w-full max-w-lg rounded-3xl border border-zinc-200/90 bg-white p-6 sm:p-8 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/10 dark:bg-indigo-950 dark:text-indigo-400">
               <Receipt className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-              Add Expense
-            </h3>
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+                Add Expense
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Log a shared bill and split with precision.
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            className="rounded-xl p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -399,22 +408,31 @@ export function AddExpenseModal({
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="mt-8 flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || Boolean(splitValidationError)}
-              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-600/25 hover:bg-indigo-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
-              {loading ? 'Saving...' : 'Add Expense'}
+              {loading ? (
+                <>
+                  <ShadowPulseDot />
+                  <span>Saving Expense...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  <span>Add Expense</span>
+                </>
+              )}
             </button>
           </div>
         </form>

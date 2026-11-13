@@ -7,6 +7,7 @@ import { ExpenseService } from '@/modules/expenses/service';
 import { BalanceService } from '@/modules/accounting/service';
 import { SettlementService } from '@/modules/settlements/service';
 import { GroupDetailClient } from '@/components/groups/GroupDetailClient';
+import { GroupDetailSkeleton } from '@/components/ui/ShadowLoader';
 import Link from 'next/link';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 
@@ -77,16 +78,7 @@ export default function GroupPage({
   params: Promise<{ groupId: string }>;
 }) {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-            <p className="text-sm font-medium text-zinc-500">Loading group details...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<GroupDetailSkeleton />}>
       <GroupPageContent params={params} />
     </Suspense>
   );
