@@ -81,14 +81,26 @@ export async function POST(
       );
     }
 
-    // 4. Feed the transcribed text into the standard draft pipeline
+    // 4. Feed the transcribed text into the draft pipeline (or refine existing draft if draftId provided)
+    const draftId = (formData.get('draftId') as string | null) || undefined;
     const draftService = new DraftService(supabase);
-    const draftPreview = await draftService.parseExpenseInput(
-      user.id,
-      groupId,
-      transcript.trim(),
-      sessionId || undefined
-    );
+
+    let draftPreview;
+    if (draftId) {
+      draftPreview = await draftService.refineDraft(
+        user.id,
+        groupId,
+        draftId,
+        transcript.trim()
+      );
+    } else {
+      draftPreview = await draftService.parseExpenseInput(
+        user.id,
+        groupId,
+        transcript.trim(),
+        sessionId || undefined
+      );
+    }
 
     return NextResponse.json(
       {

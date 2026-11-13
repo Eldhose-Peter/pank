@@ -336,6 +336,10 @@ export class DraftService {
       throw new NotFoundError('Expense draft not found');
     }
 
+    return this.formatDraftPreview(draft);
+  }
+
+  private formatDraftPreview(draft: Database['public']['Tables']['expense_drafts']['Row']): ExpenseDraftPreview {
     const structured = draft.structured_data as {
       title: string;
       description?: string | null;
@@ -366,7 +370,7 @@ export class DraftService {
       splits: structured.splits || [],
       clarificationQuestions: (draft.clarification_questions as unknown as ClarificationQuestion[]) || [],
       unresolvedNames: (structured.unresolvedNames as unknown as ExpenseDraftPreview['unresolvedNames']) || [],
-      receiptUrl: draft.receipt_url || structured.receiptUrl || null,
+      receiptUrl: (draft as any).receipt_url || structured.receiptUrl || null,
       receiptItems: structured.receiptItems || [],
       expiresAt: draft.expires_at,
       createdAt: draft.created_at,
@@ -520,6 +524,179 @@ export class DraftService {
       createdAt: updatedRecord.created_at,
       updatedAt: updatedRecord.updated_at,
     };
+  }
+
+  /**
+   * Refines an existing draft (e.g. an itemized bill or text draft) using additional natural language instructions.
+   */
+  async refineDraft(
+    userId: string,
+    groupId: string,
+    draftId: string,
+    instructions: string
+  ): Promise<ExpenseDraftPreview> {
+    const existing = await this.getDraft(userId, groupId, draftId);
+
+    if (existing.status === 'confirmed') {
+      throw new ValidationError('Confirmed drafts cannot be modified');
+    }
+
+    const { data: memberRows } = await this.supabase
+      .from('group_members')
+      .select('id, display_name, user_id')
+      .eq('group_id', groupId);
+
+    if (!memberRows || memberRows.length === 0) {
+      throw new GroupError('Group members not found');
+    }
+
+    const currentMember = memberRows.find((m) => m.user_id === userId) || memberRows[0];
+
+    const refined = await this.gemini.refineExpenseDraft(
+      {
+        title: existing.title,
+        amount: existing.amount,
+        currency: existing.currency,
+        receiptItems: existing.receiptItems,
+        payers: existing.payers,
+        splits: existing.splits,
+      },
+      instructions,
+      memberRows.map((m) => ({
+        id: m.id,
+        displayName: m.display_name,
+        isCurrentUser: m.user_id === userId,
+      }))
+    );
+
+    const memberCandidates: GroupMemberCandidate[] = memberRows.map((m) => ({
+      id: m.id,
+      displayName: m.display_name,
+      userId: m.user_id,
+      isCurrentUser: m.id === currentMember.id,
+    }));
+
+    const resolution = MemberResolver.resolveMembers(
+      refined.payers,
+      refined.participants,
+      memberCandidates,
+      currentMember.id,
+      100
+    );
+
+    const clarificationQuestions: ClarificationQuestion[] = [];
+    for (const unresolved of resolution.unresolvedNames) {
+      clarificationQuestions.push({
+        id: `q-unresolved-${unresolved.rawName}`,
+        type: 'unresolved_member',
+        question: `Who is "${unresolved.rawName}"? Choose a group member or add them as a new member:`,
+        rawName: unresolved.rawName,
+        options: [
+          ...unresolved.suggestedMatches.map((m) => ({
+            label: m.displayName,
+            value: m.groupMemberId,
+          })),
+          { label: `Add "${unresolved.rawName}" as a new friend`, value: `create_placeholder:${unresolved.rawName}` },
+        ],
+      });
+    }
+
+    for (const ambig of resolution.ambiguousMatches) {
+      clarificationQuestions.push({
+        id: `q-ambig-${ambig.rawName}`,
+        type: 'unresolved_member',
+        question: `Multiple members match "${ambig.rawName}". Which one did you mean?`,
+        rawName: ambig.rawName,
+        options: ambig.candidates.map((c) => ({
+          label: c.displayName,
+          value: c.groupMemberId,
+        })),
+      });
+    }
+
+    const amountMinor = existing.amount;
+
+    let status: DraftStatus = clarificationQuestions.length > 0 ? 'pending_clarification' : 'ready_for_review';
+    let computedSplits: {
+      groupMemberId: string;
+      displayName: string;
+      splitValue: number;
+      owedAmount: number;
+    }[] = [];
+
+    const memberMap = new Map(memberRows.map((m) => [m.id, m.display_name]));
+
+    if (status === 'ready_for_review' && resolution.resolvedParticipants.length > 0 && amountMinor > 0) {
+      try {
+        const splits = calculateSplits(
+          refined.splitType,
+          amountMinor,
+          resolution.resolvedParticipants.map((p) => ({
+            memberId: p.groupMemberId,
+            splitValue: p.splitValue,
+          }))
+        );
+
+        computedSplits = splits.map((s) => ({
+          groupMemberId: s.memberId,
+          displayName: memberMap.get(s.memberId) || 'Unknown',
+          splitValue: s.splitValue,
+          owedAmount: s.owedAmount,
+        }));
+      } catch (calcError) {
+        status = 'pending_clarification';
+        clarificationQuestions.push({
+          id: 'q-calc-error',
+          type: 'ambiguous_split',
+          question: (calcError as Error).message || 'Split calculation requires adjustment.',
+        });
+      }
+    }
+
+    const payersList = resolution.resolvedPayers.length > 0
+      ? resolution.resolvedPayers.map((p) => ({
+          groupMemberId: p.groupMemberId,
+          displayName: memberMap.get(p.groupMemberId) || 'Unknown',
+          amountPaid: p.amountPaid > 0 ? p.amountPaid : amountMinor,
+        }))
+      : existing.payers;
+
+    const updatedStructuredData = {
+      title: refined.title || existing.title,
+      description: refined.description !== undefined ? refined.description : existing.description,
+      amount: amountMinor,
+      currency: existing.currency,
+      splitType: refined.splitType,
+      expenseDate: refined.expenseDate || existing.expenseDate,
+      payers: payersList,
+      splits: computedSplits.length > 0 ? computedSplits : existing.splits,
+      unresolvedNames: resolution.unresolvedNames,
+      receiptUrl: existing.receiptUrl || null,
+      receiptItems:
+        refined.receiptItems && refined.receiptItems.length > 0
+          ? refined.receiptItems
+          : existing.receiptItems,
+    };
+
+    const { data: updatedRecord, error } = await this.supabase
+      .from('expense_drafts')
+      .update({
+        raw_input: `${existing.rawInput} | Refinement: ${instructions}`,
+        structured_data: updatedStructuredData as any,
+        status,
+        clarification_questions: clarificationQuestions as any,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', draftId)
+      .eq('group_id', groupId)
+      .select()
+      .single();
+
+    if (error || !updatedRecord) {
+      throw new GroupError(error?.message || 'Failed to update expense draft with instructions');
+    }
+
+    return this.formatDraftPreview(updatedRecord);
   }
 
   /**

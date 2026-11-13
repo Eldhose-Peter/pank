@@ -21,6 +21,9 @@ import {
   Camera,
   FileText,
   ExternalLink,
+  UploadCloud,
+  CheckCircle2,
+  MessageSquare,
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import type { ExpenseDraftPreview, ClarificationQuestion } from '@/modules/ai/types';
@@ -68,12 +71,21 @@ export function AiExpenseModal({
   const [editTitle, setEditTitle] = useState('');
   const [editAmount, setEditAmount] = useState('');
 
+  // Tab state: 'receipt' for 2-step bill splitting, 'text' for natural language
+  type InputTab = 'receipt' | 'text';
+  const [inputTab, setInputTab] = useState<InputTab>('receipt');
+  const [isDragging, setIsDragging] = useState(false);
+
   // Bill / receipt upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [billParsing, setBillParsing] = useState(false);
-  const [showReceiptItems, setShowReceiptItems] = useState(false);
+  const [showReceiptItems, setShowReceiptItems] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Step 2 refinement instructions state
+  const [refineText, setRefineText] = useState('');
+  const [refining, setRefining] = useState(false);
 
   const handleBillUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -85,6 +97,7 @@ export function AiExpenseModal({
     }
 
     setSelectedFile(file);
+    setInputTab('receipt');
     if (file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file);
       setFilePreviewUrl(url);
@@ -119,7 +132,11 @@ export function AiExpenseModal({
   } = useVoiceInput({
     lang: 'en-IN',
     onResult: (text) => {
-      setPromptText((prev) => (prev ? `${prev} ${text}` : text));
+      if (draft) {
+        setRefineText((prev) => (prev ? `${prev} ${text}` : text));
+      } else {
+        setPromptText((prev) => (prev ? `${prev} ${text}` : text));
+      }
     },
     onError: (err) => setError(err),
   });
@@ -145,11 +162,13 @@ export function AiExpenseModal({
 
     setVoiceParsing(true);
     setError(null);
-    setDraft(null);
 
     try {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'voice-expense.webm');
+      if (draft) {
+        formData.append('draftId', draft.id);
+      }
 
       const res = await fetch(`/api/groups/${groupId}/ai/voice-parse`, {
         method: 'POST',
@@ -161,21 +180,27 @@ export function AiExpenseModal({
         throw new Error(data.error || 'Failed to parse voice input');
       }
 
-      // Fill the text field with the transcript so the user can see what was heard
-      if (data.transcript) {
-        setPromptText(data.transcript);
+      if (draft) {
+        setDraft(data.draft);
+        setEditTitle(data.draft.title);
+        setEditAmount((data.draft.amount / 100).toString());
+        setClarificationAnswers({});
+        setRefineText('');
+      } else {
+        if (data.transcript) {
+          setPromptText(data.transcript);
+        }
+        setDraft(data.draft);
+        setEditTitle(data.draft.title);
+        setEditAmount((data.draft.amount / 100).toString());
+        setClarificationAnswers({});
       }
-
-      setDraft(data.draft);
-      setEditTitle(data.draft.title);
-      setEditAmount((data.draft.amount / 100).toString());
-      setClarificationAnswers({});
     } catch (err: any) {
       setError(err.message || 'Error processing voice input');
     } finally {
       setVoiceParsing(false);
     }
-  }, [stopRecording, groupId]);
+  }, [stopRecording, groupId, draft]);
 
   const handleMicToggle = useCallback(async () => {
     setError(null);
@@ -213,21 +238,13 @@ export function AiExpenseModal({
   ];
 
   const handleParse = async (textToParse?: string) => {
-    const text = (textToParse || promptText).trim();
-    if (!text && !selectedFile) return;
-
-    setError(null);
-    setDraft(null);
-
-    // If a bill/receipt is selected, use the bill-parse endpoint
+    // If a bill/receipt is selected, use the bill-parse endpoint (Step 1: parse image first)
     if (selectedFile) {
+      setError(null);
       setBillParsing(true);
       try {
         const formData = new FormData();
         formData.append('file', selectedFile);
-        if (text) {
-          formData.append('instructions', text);
-        }
 
         const res = await fetch(`/api/groups/${groupId}/ai/bill-parse`, {
           method: 'POST',
@@ -243,6 +260,7 @@ export function AiExpenseModal({
         setEditTitle(data.draft.title);
         setEditAmount((data.draft.amount / 100).toString());
         setClarificationAnswers({});
+        setShowReceiptItems(true);
       } catch (err: any) {
         setError(err.message || 'Error scanning bill');
       } finally {
@@ -251,6 +269,10 @@ export function AiExpenseModal({
       return;
     }
 
+    const text = (textToParse || promptText).trim();
+    if (!text) return;
+
+    setError(null);
     setParsing(true);
 
     try {
@@ -273,6 +295,37 @@ export function AiExpenseModal({
       setError(err.message || 'Error communicating with AI service');
     } finally {
       setParsing(false);
+    }
+  };
+
+  const handleRefineDraft = async (customInstructions?: string) => {
+    const instructions = (customInstructions || refineText).trim();
+    if (!instructions || !draft) return;
+
+    setRefining(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/groups/${groupId}/ai/drafts/${draft.id}/refine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instructions }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to refine split');
+      }
+
+      setDraft(data.draft);
+      setEditTitle(data.draft.title);
+      setEditAmount((data.draft.amount / 100).toString());
+      setClarificationAnswers({});
+      setRefineText('');
+    } catch (err: any) {
+      setError(err.message || 'Error updating split with instructions');
+    } finally {
+      setRefining(false);
     }
   };
 
@@ -444,15 +497,41 @@ export function AiExpenseModal({
             </div>
           )}
 
-          {/* Prompt Input Section */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                Expense Description
-              </label>
+          {/* Mode Selection and Inputs (shown when no draft) */}
+          {!draft && (
+            <div className="space-y-4">
+              {/* Header with Tab Selectors and Voice Toggle */}
+              <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setInputTab('receipt')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      inputTab === 'receipt'
+                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Receipt className="h-4 w-4" />
+                    <span>Scan Bill / Receipt</span>
+                    {selectedFile && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                  </button>
 
-              {/* Voice Mode Toggle (Always Visible) */}
-              <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setInputTab('text')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      inputTab === 'text'
+                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Text & Voice Prompt</span>
+                  </button>
+                </div>
+
+                {/* Voice Engine Toggle */}
                 <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[11px] font-medium border border-zinc-200 dark:border-zinc-700">
                   <button
                     type="button"
@@ -461,12 +540,12 @@ export function AiExpenseModal({
                       setVoiceMode('browser');
                     }}
                     disabled={isVoiceActive}
-                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 transition-all ${
+                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 transition-all ${
                       voiceMode === 'browser'
                         ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold'
                         : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     } disabled:opacity-60`}
-                    title="Browser-native Speech Recognition (Instant, Free)"
+                    title="Browser-native Speech Recognition (Free, Instant)"
                   >
                     <Zap className="h-3 w-3" />
                     Browser
@@ -478,237 +557,309 @@ export function AiExpenseModal({
                       setVoiceMode('gemini');
                     }}
                     disabled={isVoiceActive}
-                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 transition-all ${
+                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 transition-all ${
                       voiceMode === 'gemini'
                         ? 'bg-white dark:bg-zinc-700 text-violet-600 dark:text-violet-400 shadow-sm font-semibold'
                         : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     } disabled:opacity-60`}
-                    title="Gemini Multimodal Voice (Higher Accuracy, Multilingual)"
+                    title="Gemini Multimodal Voice"
                   >
                     <Sparkles className="h-3 w-3" />
                     Gemini AI
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* File Upload Hidden Input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,application/pdf"
-              className="hidden"
-              onChange={handleBillUpload}
-            />
-
-            {/* Selected Bill Preview Chip */}
-            {selectedFile && (
-              <div className="mb-2 flex items-center justify-between rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 p-2.5 text-xs animate-in fade-in">
-                <div className="flex items-center gap-2.5">
-                  {filePreviewUrl ? (
-                    <img
-                      src={filePreviewUrl}
-                      alt="Receipt preview"
-                      className="h-9 w-9 rounded-lg object-cover border border-indigo-200 shadow-sm"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600">
-                      <FileText className="h-5 w-5" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-semibold text-indigo-900 dark:text-indigo-200 truncate max-w-[260px]">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                      {(selectedFile.size / 1024).toFixed(0)} KB · Ready to scan with Gemini 2.5 Flash Vision
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleRemoveFile}
-                  className="rounded-lg p-1 text-zinc-400 hover:bg-white hover:text-red-500 dark:hover:bg-zinc-800 transition-colors"
-                  title="Remove bill"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-
-            <div className="relative">
-              <textarea
-                value={promptText}
-                onChange={(e) => setPromptText(e.target.value)}
-                rows={3}
-                placeholder={
-                  selectedFile
-                    ? 'Optional: Add split instructions (e.g. "Alice ate pizza, Bob paid for drinks") or leave blank to split equally.'
-                    : isVoiceActive
-                    ? voiceMode === 'browser'
-                      ? '🎤 Listening... speak your expense now'
-                      : '🎤 Recording... tap "Stop Rec" when finished'
-                    : 'e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun.'
-                }
-                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pb-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:bg-zinc-950 dark:text-white resize-none transition-colors ${
-                  isVoiceActive
-                    ? 'border-red-400 dark:border-red-600 ring-2 ring-red-500/20'
-                    : 'border-zinc-200 dark:border-zinc-800'
-                }`}
-                disabled={parsing || voiceParsing || billParsing}
+              {/* File Upload Hidden Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={handleBillUpload}
               />
 
-              {/* Action buttons inside textarea: Upload Bill + Voice Mic + Extract Draft */}
-              <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
-                {/* Upload Bill Button */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={parsing || voiceParsing || billParsing}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
-                    selectedFile
-                      ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
-                  }`}
-                  title="Upload or snap a bill / receipt (PNG, JPG, PDF)"
-                >
-                  <Camera className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
-                  <span>{selectedFile ? 'Change Bill' : 'Upload Bill'}</span>
-                </button>
+              {/* TAB 1: SCAN BILL / RECEIPT (STEP 1) */}
+              {inputTab === 'receipt' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/70 dark:border-indigo-900/40 px-3.5 py-2 text-xs text-indigo-900 dark:text-indigo-200">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shrink-0">
+                      1
+                    </span>
+                    <span>
+                      <strong className="font-semibold">Step 1:</strong> Upload & scan bill to extract items and total. In Step 2, you can verify items and add split instructions.
+                    </span>
+                  </div>
 
-                {/* Voice Speak / Mic Button */}
-                <button
-                  type="button"
-                  onClick={handleMicToggle}
-                  disabled={parsing || voiceParsing || billParsing}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
-                    isVoiceActive
-                      ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
-                      : voiceParsing
-                      ? 'bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 border border-violet-300 dark:border-violet-800'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
-                  }`}
-                  title={
-                    isVoiceActive
-                      ? voiceMode === 'browser'
-                        ? 'Stop listening'
-                        : 'Stop recording & parse'
-                      : `Click to speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini AI Voice'}`
-                  }
-                >
-                  {voiceParsing ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span>Transcribing...</span>
-                    </>
-                  ) : isVoiceActive ? (
-                    <>
-                      <MicOff className="h-3.5 w-3.5" />
-                      <span>{voiceMode === 'browser' ? 'Listening...' : 'Stop Rec'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
-                      <span>Speak</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Extract / Scan Bill Draft button */}
-                <button
-                  type="button"
-                  onClick={() => handleParse()}
-                  disabled={parsing || voiceParsing || billParsing || (!promptText.trim() && !selectedFile)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:pointer-events-none transition-all"
-                >
-                  {parsing || billParsing ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span>{billParsing ? 'Scanning Bill...' : 'Parsing...'}</span>
-                    </>
-                  ) : selectedFile ? (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>Scan Bill</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>Extract Draft</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Voice Activity Feedback Bar */}
-            {isVoiceActive && (
-              <div className="mt-2 flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 animate-in fade-in">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-                  </span>
-                  <span className="font-medium">
-                    {voiceMode === 'browser'
-                      ? 'Listening via Browser Speech API... speak your expense'
-                      : 'Recording audio for Gemini AI... tap "Stop Rec" when done'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleMicToggle}
-                  className="font-bold underline hover:no-underline text-xs"
-                >
-                  {voiceMode === 'browser' ? 'Done' : 'Process Audio'}
-                </button>
-              </div>
-            )}
-
-            {voiceParsing && (
-              <div className="mt-2 flex items-center gap-2 rounded-lg bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3 py-1.5 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span className="font-medium">
-                  Uploading audio to Gemini multimodal AI for transcription & split calculation...
-                </span>
-              </div>
-            )}
-
-            {billParsing && (
-              <div className="mt-2 flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 px-3 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 animate-in fade-in">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span className="font-medium">
-                  Scanning receipt with Gemini 2.5 Flash Vision OCR & extracting amounts...
-                </span>
-              </div>
-            )}
-
-            {/* Quick Prompt Pills */}
-            {!draft && (
-              <div className="mt-2.5 space-y-1.5">
-                <span className="text-[11px] font-medium text-zinc-400">Try an example:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {quickPrompts.map((p, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setPromptText(p);
-                        handleParse(p);
+                  {!selectedFile ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
                       }}
-                      className="rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] px-2.5 py-1 text-left transition-colors"
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) {
+                          const syntheticEvent = { target: { files: [file] } } as any;
+                          handleBillUpload(syntheticEvent);
+                        }
+                      }}
+                      className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                        isDragging
+                          ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/50 ring-4 ring-indigo-500/10'
+                          : 'border-zinc-300 dark:border-zinc-700 hover:border-indigo-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                      }`}
                     >
-                      {p}
-                    </button>
-                  ))}
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-3 shadow-sm">
+                        <Camera className="h-6 w-6" />
+                      </div>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                        Upload or snap a receipt / bill photo
+                      </p>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        JPEG, PNG, WebP or PDF · up to 15MB
+                      </p>
+                      <button
+                        type="button"
+                        className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors cursor-pointer"
+                      >
+                        <UploadCloud className="h-3.5 w-3.5" />
+                        <span>Browse Files</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {filePreviewUrl ? (
+                            <img
+                              src={filePreviewUrl}
+                              alt="Receipt preview"
+                              className="h-14 w-14 rounded-xl object-cover border border-indigo-200 dark:border-indigo-800 shadow-sm"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600">
+                              <FileText className="h-7 w-7" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-bold text-zinc-900 dark:text-white truncate max-w-[280px]">
+                              {selectedFile.name}
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                              {(selectedFile.size / 1024).toFixed(0)} KB · Ready to scan with Gemini Vision OCR
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleRemoveFile}
+                          className="rounded-lg p-1.5 text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          title="Remove file"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-indigo-100 dark:border-indigo-900/40">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+                        >
+                          Change receipt file
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleParse()}
+                          disabled={billParsing}
+                          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all cursor-pointer"
+                        >
+                          {billParsing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Scanning & Itemizing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              <span>Scan Bill</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {billParsing && (
+                    <div className="flex items-center gap-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 p-3 text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in">
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                      <div>
+                        <p className="font-semibold">Extracting merchant, items, and total with Gemini Vision...</p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          Step 2 will display the verified items and let you provide custom split instructions.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {/* TAB 2: TEXT & VOICE PROMPT */}
+              {inputTab === 'text' && (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <textarea
+                      value={promptText}
+                      onChange={(e) => setPromptText(e.target.value)}
+                      rows={3}
+                      placeholder={
+                        isVoiceActive
+                          ? voiceMode === 'browser'
+                            ? '🎤 Listening... speak your expense now'
+                            : '🎤 Recording... tap "Stop Rec" when finished'
+                          : 'e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun.'
+                      }
+                      className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pb-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:bg-zinc-950 dark:text-white resize-none transition-colors ${
+                        isVoiceActive
+                          ? 'border-red-400 dark:border-red-600 ring-2 ring-red-500/20'
+                          : 'border-zinc-200 dark:border-zinc-800'
+                      }`}
+                      disabled={parsing || voiceParsing}
+                    />
+
+                    <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
+                      {/* Voice Speak / Mic Button */}
+                      <button
+                        type="button"
+                        onClick={handleMicToggle}
+                        disabled={parsing || voiceParsing}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 ${
+                          isVoiceActive
+                            ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
+                            : voiceParsing
+                            ? 'bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 border border-violet-300 dark:border-violet-800'
+                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
+                        }`}
+                      >
+                        {isVoiceActive ? (
+                          <>
+                            <MicOff className="h-3.5 w-3.5" />
+                            <span>{voiceMode === 'browser' ? 'Listening...' : 'Stop Rec'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mic className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+                            <span>Speak</span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* Extract Draft Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleParse()}
+                        disabled={parsing || voiceParsing || !promptText.trim()}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        {parsing ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Parsing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Extract Draft</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Voice Activity Feedback Bar */}
+                  {isVoiceActive && (
+                    <div className="flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 animate-in fade-in">
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                        </span>
+                        <span className="font-medium">
+                          {voiceMode === 'browser'
+                            ? 'Listening via Browser Speech API... speak your expense'
+                            : 'Recording audio for Gemini AI... tap "Stop Rec" when done'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleMicToggle}
+                        className="font-bold underline hover:no-underline text-xs"
+                      >
+                        {voiceMode === 'browser' ? 'Done' : 'Process Audio'}
+                      </button>
+                    </div>
+                  )}
+
+                  {voiceParsing && (
+                    <div className="flex items-center gap-2 rounded-lg bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3 py-1.5 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span className="font-medium">
+                        Uploading audio to Gemini multimodal AI for transcription & split calculation...
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Quick Prompt Pills */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-medium text-zinc-400">Try an example:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {quickPrompts.map((p, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setPromptText(p);
+                            handleParse(p);
+                          }}
+                          className="rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] px-2.5 py-1 text-left transition-colors cursor-pointer"
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* DRAFT PREVIEW OR CLARIFICATION */}
           {draft && (
             <div className="rounded-xl border border-indigo-100 dark:border-indigo-950 bg-indigo-50/30 dark:bg-indigo-950/20 p-4 space-y-4">
+              {/* 2-Step Progress Header for Scanned Receipts */}
+              {(draft.receiptItems?.length || draft.receiptUrl) && (
+                <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50/90 via-indigo-50/80 to-violet-50/90 dark:from-emerald-950/50 dark:via-indigo-950/40 dark:to-violet-950/50 border border-indigo-200/70 dark:border-indigo-900/50 p-2.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>Step 1: Bill Items Extracted</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-violet-700 dark:text-violet-300 font-bold">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
+                    </span>
+                    <span>Step 2: Add Split Instructions (Optional)</span>
+                  </div>
+                </div>
+              )}
+
               {/* Status Header */}
               <div className="flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900/40 pb-3">
                 <div className="flex items-center gap-2">
@@ -880,6 +1031,112 @@ export function AiExpenseModal({
                     )}
                   </div>
                 )}
+
+                {/* STEP 2: PROVIDE ADDITIONAL SPLIT INSTRUCTIONS */}
+                <div className="rounded-xl border border-violet-200 dark:border-violet-900/60 bg-gradient-to-br from-violet-50/60 via-white to-indigo-50/40 dark:from-violet-950/30 dark:via-zinc-900/50 dark:to-indigo-950/20 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-violet-900 dark:text-violet-200">
+                      <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                      <span>Step 2: Add Split Instructions (Optional)</span>
+                    </div>
+                    <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">
+                      Type or speak
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    Verify the itemized list above. If anyone ordered specific items or ate a fraction, tell AI below:
+                  </p>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={refineText}
+                      onChange={(e) => setRefineText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && refineText.trim()) {
+                          handleRefineDraft();
+                        }
+                      }}
+                      placeholder="e.g. Alice had pizza, Bob had pasta, split drinks equally"
+                      disabled={refining || voiceParsing}
+                      className="w-full text-xs rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3 py-2 pr-28 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+                    />
+
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {/* Mic Speak button */}
+                      <button
+                        type="button"
+                        onClick={handleMicToggle}
+                        disabled={refining || voiceParsing}
+                        title={
+                          isVoiceActive
+                            ? 'Stop recording'
+                            : `Speak using ${voiceMode === 'browser' ? 'Browser Speech' : 'Gemini Voice'}`
+                        }
+                        className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          isVoiceActive
+                            ? 'bg-red-500 text-white animate-pulse'
+                            : 'text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40'
+                        }`}
+                      >
+                        {isVoiceActive ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                      </button>
+
+                      {/* Apply button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRefineDraft()}
+                        disabled={refining || voiceParsing || !refineText.trim()}
+                        className="inline-flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-violet-500 disabled:opacity-40 transition-colors cursor-pointer"
+                      >
+                        {refining ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-3 w-3" />
+                            <span>Update Split</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Suggestion Chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handleRefineDraft('Split equally between everyone')}
+                      disabled={refining}
+                      className="text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2 py-0.5 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer"
+                    >
+                      Split equally between everyone
+                    </button>
+                    {members.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRefineDraft(`Split 50-50 between ${members[0]?.displayName} and ${members[1]?.displayName}`)}
+                        disabled={refining}
+                        className="text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2 py-0.5 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer"
+                      >
+                        Split 50-50 between {members[0]?.displayName} & {members[1]?.displayName}
+                      </button>
+                    )}
+                    {draft.receiptItems && draft.receiptItems.length > 0 && members.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRefineDraft(`${members[1]?.displayName} had ${draft.receiptItems![0].name}, split rest equally`)}
+                        disabled={refining}
+                        className="text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-violet-200 dark:border-violet-900 px-2 py-0.5 text-zinc-600 dark:text-zinc-300 hover:border-violet-400 transition-colors cursor-pointer"
+                      >
+                        {members[1]?.displayName} had {draft.receiptItems[0].name}
+                      </button>
+                    )}
+                  </div>
+                </div>
 
                 {/* Individual Shares Breakdown */}
                 <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">

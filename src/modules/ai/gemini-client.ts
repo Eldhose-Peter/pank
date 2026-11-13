@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import type { ExtractedExpenseDraft } from './types';
+import type { ExtractedExpenseDraft, ExtractedParticipant } from './types';
+import type { SplitType } from '@/modules/accounting/types';
 
 export interface GroupMemberContext {
   id: string;
@@ -401,6 +402,252 @@ Rules:
       console.error('Gemini receipt extraction failed:', error);
       throw new Error('Failed to analyze the bill image. Please ensure the image is clear or enter the details manually.');
     }
+  }
+
+  /**
+   * Refines an existing expense draft (especially an itemized bill) with natural language split instructions.
+   */
+  async refineExpenseDraft(
+    draft: {
+      title: string;
+      amount: number; // in cents/paise (minor units)
+      currency: string;
+      receiptItems?: { name: string; amount: number }[];
+      payers?: { displayName: string; amountPaid: number }[];
+      splits?: { displayName: string; owedAmount: number }[];
+    },
+    instructions: string,
+    members: GroupMemberContext[]
+  ): Promise<ExtractedExpenseDraft> {
+    const defaultCurrency = draft.currency || 'INR';
+    const totalMajor = draft.amount / 100;
+
+    if (!this.client) {
+      return this.heuristicRefineFallback(draft, instructions, members);
+    }
+
+    const memberListText = members
+      .map((m) => `- ${m.displayName}${m.isCurrentUser ? ' (Current User / "me" / "I")' : ''}`)
+      .join('\n');
+
+    const itemsListText =
+      draft.receiptItems && draft.receiptItems.length > 0
+        ? draft.receiptItems
+            .map((item, idx) => `${idx + 1}. ${item.name}: ${draft.currency} ${item.amount.toFixed(2)}`)
+            .join('\n')
+        : 'No individual items listed.';
+
+    const systemInstruction = `You are an expert expense-splitting assistant.
+A user previously scanned or entered a bill with total ${totalMajor.toFixed(2)} ${draft.currency} and merchant "${draft.title}".
+The user has now reviewed the itemized items and is providing additional natural language instructions to adjust how the bill is split or who pays.
+
+Contextual Group Members:
+${memberListText}
+
+Itemized Bill Items:
+${itemsListText}
+
+Total Bill Amount: ${totalMajor.toFixed(2)} ${draft.currency}
+
+Rules:
+1. Retain the total amount (${totalMajor.toFixed(2)}), title ("${draft.title}"), and currency ("${draft.currency}") unless user explicitly asks to edit them.
+2. If user assigns specific items to specific members (e.g. "Alice had the pizza, Bob had pasta, split drinks equally between all 3 of us"):
+   - Sum up the costs of the assigned items for each person.
+   - For shared items (or remaining balance), divide their cost equally among the shared participants.
+   - Set splitType="exact", and set splitValue for each participant in major currency units.
+   - Ensure the sum of all participant splitValues equals exactly the grand total (${totalMajor.toFixed(2)}).
+3. If user specifies fractional or percentage shares (e.g. "Alice ate one third", "Bob 60%, Charlie 40%", "2:1 ratio"):
+   - Set splitType="shares" or splitType="percentage" with appropriate numeric splitValue for each member.
+4. If user specifies who should participate (e.g. "split equally between Alice and Bob", "exclude Charlie"):
+   - Set splitType="equal" with only the specified members in participants.
+5. If user specifies who paid (e.g. "Bob paid", "Alice paid 500, I paid the rest"):
+   - Set payers array accordingly with rawName and amount. Default to "me" if not stated.
+6. If user names someone not in the group members list:
+   - Include them in participants with their rawName and add a question in clarificationNeeded.
+7. Always preserve the original receiptItems in the output JSON.
+8. Always output valid JSON conforming to the schema.`;
+
+    const refineSchema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        description: { type: Type.STRING },
+        amount: { type: Type.NUMBER },
+        currency: { type: Type.STRING },
+        splitType: {
+          type: Type.STRING,
+          enum: ['equal', 'exact', 'percentage', 'shares'],
+        },
+        expenseDate: { type: Type.STRING },
+        payers: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              rawName: { type: Type.STRING },
+              amount: { type: Type.NUMBER },
+            },
+            required: ['rawName'],
+          },
+        },
+        participants: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              rawName: { type: Type.STRING },
+              splitValue: { type: Type.NUMBER },
+            },
+            required: ['rawName'],
+          },
+        },
+        receiptItems: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              amount: { type: Type.NUMBER },
+            },
+            required: ['name', 'amount'],
+          },
+        },
+        clarificationNeeded: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+        },
+        confidence: { type: Type.NUMBER },
+      },
+      required: ['title', 'amount', 'currency', 'splitType', 'payers', 'participants'],
+    };
+
+    try {
+      const response = await this.client.models.generateContent({
+        model: this.modelName,
+        contents: `User Instructions: "${instructions}"`,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: refineSchema,
+          temperature: 0.1,
+        },
+      });
+
+      const responseText = response.text?.trim() || '{}';
+      const parsed = JSON.parse(responseText);
+
+      return {
+        title: parsed.title || draft.title,
+        description: parsed.description || instructions,
+        amount: Number(parsed.amount) || totalMajor,
+        currency: (parsed.currency || defaultCurrency).toUpperCase(),
+        splitType: parsed.splitType || 'equal',
+        expenseDate: parsed.expenseDate || new Date().toISOString().split('T')[0],
+        payers: Array.isArray(parsed.payers) && parsed.payers.length > 0 ? parsed.payers : [{ rawName: 'me' }],
+        participants:
+          Array.isArray(parsed.participants) && parsed.participants.length > 0
+            ? parsed.participants
+            : members.map((m) => ({ rawName: m.displayName })),
+        clarificationNeeded: parsed.clarificationNeeded || [],
+        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.9,
+        receiptItems:
+          Array.isArray(parsed.receiptItems) && parsed.receiptItems.length > 0
+            ? parsed.receiptItems
+            : draft.receiptItems || [],
+      };
+    } catch (error) {
+      console.warn('Gemini refineExpenseDraft failed, falling back to heuristic parser:', error);
+      return this.heuristicRefineFallback(draft, instructions, members);
+    }
+  }
+
+  /**
+   * Deterministic heuristic fallback for refining draft splits offline.
+   */
+  heuristicRefineFallback(
+    draft: {
+      title: string;
+      amount: number;
+      currency: string;
+      receiptItems?: { name: string; amount: number }[];
+    },
+    instructions: string,
+    members: GroupMemberContext[]
+  ): ExtractedExpenseDraft {
+    const text = instructions.toLowerCase();
+    const totalMajor = draft.amount / 100;
+    const defaultCurrency = draft.currency;
+
+    const matchedMembers = members.filter((m) =>
+      text.includes(m.displayName.toLowerCase())
+    );
+
+    const fractionMatch = text.match(/(one[ -]third|1\/3|one[ -]fourth|1\/4|quarter|half|1\/2)/i);
+    const ratioMatch = text.match(/(\d+)\s*[:/]\s*(\d+)/);
+
+    let splitType: SplitType = 'equal';
+    let participants: ExtractedParticipant[] = [];
+
+    if (ratioMatch) {
+      splitType = 'shares';
+      const r1 = parseInt(ratioMatch[1], 10);
+      const r2 = parseInt(ratioMatch[2], 10);
+      if (matchedMembers.length >= 2) {
+        participants = [
+          { rawName: matchedMembers[0].displayName, splitValue: r1 },
+          { rawName: matchedMembers[1].displayName, splitValue: r2 },
+        ];
+      } else {
+        participants = [
+          { rawName: 'me', splitValue: r1 },
+          { rawName: matchedMembers[0]?.displayName || 'them', splitValue: r2 },
+        ];
+      }
+    } else if (fractionMatch && matchedMembers.length > 0) {
+      splitType = 'shares';
+      const frac = fractionMatch[1].toLowerCase();
+      const namedMember = matchedMembers[0];
+      const otherMembers = members.filter((m) => m.id !== namedMember.id);
+
+      if (frac.includes('third') || frac === '1/3') {
+        const othersCount = Math.max(1, otherMembers.length);
+        participants = [
+          { rawName: namedMember.displayName, splitValue: 1 },
+          ...otherMembers.map((m) => ({ rawName: m.displayName, splitValue: 2 })),
+        ];
+      } else if (frac.includes('half') || frac === '1/2') {
+        participants = [
+          { rawName: namedMember.displayName, splitValue: 1 },
+          ...otherMembers.map((m) => ({ rawName: m.displayName, splitValue: 1 })),
+        ];
+      }
+    } else if (matchedMembers.length > 0) {
+      splitType = 'equal';
+      participants = matchedMembers.map((m) => ({ rawName: m.displayName }));
+      if (text.includes('me') || text.includes(' i ') || text.includes('i paid') || text.includes('with me')) {
+        const me = members.find((m) => m.isCurrentUser);
+        if (me && !participants.some((p) => p.rawName === me.displayName)) {
+          participants.push({ rawName: 'me' });
+        }
+      }
+    } else {
+      splitType = 'equal';
+      participants = members.map((m) => ({ rawName: m.displayName }));
+    }
+
+    return {
+      title: draft.title,
+      description: instructions,
+      amount: totalMajor,
+      currency: defaultCurrency,
+      splitType,
+      expenseDate: new Date().toISOString().split('T')[0],
+      payers: [{ rawName: 'me' }],
+      participants,
+      clarificationNeeded: [],
+      confidence: 0.8,
+      receiptItems: draft.receiptItems || [],
+    };
   }
 
   /**

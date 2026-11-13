@@ -108,4 +108,48 @@ describe('AI: GeminiAIClient Expense Parsing', () => {
     expect(draft.currency).toBe('INR');
     expect(draft.participants.length).toBeGreaterThan(0);
   });
+
+  it('refines an existing itemized draft with subsequent split instructions', async () => {
+    const existingDraft = {
+      title: 'Pizzeria Romana',
+      amount: 85000, // ₹850 in paise
+      currency: 'INR',
+      receiptItems: [
+        { name: 'Farmhouse Pizza', amount: 450 },
+        { name: 'Garlic Bread', amount: 150 },
+        { name: 'Cold Drinks', amount: 100 },
+        { name: 'Choco Mousse', amount: 150 },
+      ],
+    };
+
+    const refined = await client.refineExpenseDraft(
+      existingDraft,
+      'Rahul had the Farmhouse Pizza, split the rest equally with Priya and me',
+      members
+    );
+
+    expect(refined).toBeDefined();
+    expect(refined.amount).toBe(850);
+    expect(refined.receiptItems?.length).toBe(4);
+    expect(refined.participants.length).toBeGreaterThan(0);
+  });
+
+  it('refines an existing draft with proportional ratio instructions', async () => {
+    const existingDraft = {
+      title: 'Coffee House',
+      amount: 30000,
+      currency: 'INR',
+      receiptItems: [{ name: 'Cappuccino x2', amount: 300 }],
+    };
+
+    const refined = await client.refineExpenseDraft(
+      existingDraft,
+      'Rahul ate one third, Priya and Arjun split the rest',
+      members
+    );
+
+    expect(refined).toBeDefined();
+    expect(refined.amount).toBe(300);
+    expect(refined.participants.length).toBeGreaterThan(0);
+  });
 });
