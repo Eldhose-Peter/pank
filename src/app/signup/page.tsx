@@ -97,11 +97,13 @@ function SignupForm() {
           type="button"
           onClick={handleDemoLogin}
           disabled={demoLoading || loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60 transition-all shadow-xs active:scale-[0.99] cursor-pointer"
+          className={`flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60 transition-all shadow-xs active:scale-[0.99] cursor-pointer ${
+            demoLoading ? 'animate-shadow-pulse pointer-events-none' : ''
+          }`}
         >
           {demoLoading ? (
             <>
-              <ShadowPulseDot />
+              <ShadowPulseDot variant="primary" />
               <span>Signing in as Demo User...</span>
             </>
           ) : (
@@ -170,7 +172,9 @@ function SignupForm() {
           <button
             type="submit"
             disabled={loading || demoLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
+            className={`flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
+              loading ? 'animate-shadow-pulse pointer-events-none' : ''
+            }`}
           >
             {loading ? (
               <>

@@ -35,9 +35,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       setToasts((prev) => [...prev, newToast]);
 
+      const timeoutMs = type === 'error' ? 5000 : 3500;
       setTimeout(() => {
         removeToast(id);
-      }, 3500);
+      }, timeoutMs);
     },
     [removeToast]
   );
@@ -64,13 +65,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <aside
         aria-label="Notifications"
         aria-live="polite"
-        className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"
+        className="fixed bottom-5 inset-x-4 sm:inset-x-auto sm:right-5 sm:max-w-sm sm:w-full z-50 flex flex-col gap-2.5 pointer-events-none"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             role="status"
-            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-all duration-200 transform translate-y-0 opacity-100 ${
+            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${
               toast.type === 'success'
                 ? 'border-emerald-200 bg-white/95 text-emerald-950 dark:border-emerald-900/60 dark:bg-zinc-900/95 dark:text-emerald-100 shadow-emerald-500/10'
                 : toast.type === 'error'

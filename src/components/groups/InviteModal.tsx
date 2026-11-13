@@ -98,7 +98,9 @@ export function InviteModal({ isOpen, onClose, groupId }: InviteModalProps) {
             <button
               onClick={handleGenerateInvite}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-purple-600/25 hover:bg-purple-500 hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+              className={`flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-purple-600/25 hover:bg-purple-500 hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer ${
+                loading ? 'animate-shadow-pulse pointer-events-none' : ''
+              }`}
             >
               {loading ? (
                 <>

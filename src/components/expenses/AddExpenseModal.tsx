@@ -89,6 +89,17 @@ export function AddExpenseModal({
     }
   }
 
+  // Allocation metrics for UI feedback on exact & percentage splits
+  const allocatedExactMinor = splitType === 'exact'
+    ? selectedMemberIds.reduce((sum, id) => sum + Math.round(parseFloat(customValues[id] || '0') * 100), 0)
+    : 0;
+  const remainingExactMinor = minorAmount - allocatedExactMinor;
+
+  const totalPercentage = splitType === 'percentage'
+    ? selectedMemberIds.reduce((sum, id) => sum + parseFloat(customValues[id] || '0'), 0)
+    : 0;
+  const remainingPercentage = 100 - totalPercentage;
+
   const toggleMemberSelection = (memberId: string) => {
     setSelectedMemberIds((prev) => {
       if (prev.includes(memberId)) {
@@ -406,6 +417,60 @@ export function AddExpenseModal({
                 );
               })}
             </div>
+
+            {/* Live split feedback for exact split */}
+            {splitType === 'exact' && minorAmount > 0 && (
+              <div className={`mt-3 flex items-center justify-between rounded-xl px-3.5 py-2 text-xs border ${
+                remainingExactMinor === 0
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50'
+                  : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
+              }`}>
+                <div className="flex items-center gap-1.5 font-medium">
+                  {remainingExactMinor === 0 ? <Check className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-amber-600" />}
+                  <span>
+                    Allocated: <strong>{formatMinorUnits(allocatedExactMinor, currency)}</strong> of <strong>{formatMinorUnits(minorAmount, currency)}</strong>
+                  </span>
+                </div>
+                <span className="font-semibold font-mono">
+                  {remainingExactMinor === 0
+                    ? '100% Allocated'
+                    : remainingExactMinor > 0
+                    ? `${formatMinorUnits(remainingExactMinor, currency)} remaining`
+                    : `${formatMinorUnits(Math.abs(remainingExactMinor), currency)} over`}
+                </span>
+              </div>
+            )}
+
+            {/* Live split feedback for percentage split */}
+            {splitType === 'percentage' && (
+              <div className={`mt-3 flex items-center justify-between rounded-xl px-3.5 py-2 text-xs border ${
+                Math.abs(remainingPercentage) < 0.01
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50'
+                  : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
+              }`}>
+                <div className="flex items-center gap-1.5 font-medium">
+                  {Math.abs(remainingPercentage) < 0.01 ? <Check className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-amber-600" />}
+                  <span>
+                    Total: <strong>{totalPercentage.toFixed(1)}%</strong>
+                  </span>
+                </div>
+                <span className="font-semibold font-mono">
+                  {Math.abs(remainingPercentage) < 0.01
+                    ? 'Exact 100%'
+                    : remainingPercentage > 0
+                    ? `${remainingPercentage.toFixed(1)}% remaining`
+                    : `${Math.abs(remainingPercentage).toFixed(1)}% over`}
+                </span>
+              </div>
+            )}
+
+            {/* Split validation error banner */}
+            {splitValidationError && (
+              <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/50 dark:text-red-300 border border-red-200 dark:border-red-900/50">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                <p className="font-medium">{splitValidationError}</p>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
@@ -420,7 +485,10 @@ export function AddExpenseModal({
             <button
               type="submit"
               disabled={loading || Boolean(splitValidationError)}
-              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-600/25 hover:bg-indigo-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
+              title={splitValidationError || 'Save Expense'}
+              className={`flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-600/25 hover:bg-indigo-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
+                loading ? 'animate-shadow-pulse pointer-events-none' : ''
+              }`}
             >
               {loading ? (
                 <>

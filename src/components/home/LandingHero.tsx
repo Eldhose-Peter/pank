@@ -73,11 +73,13 @@ export function LandingHero() {
           <button
             onClick={handleDemoLogin}
             disabled={demoLoading}
-            className="flex h-12 w-full sm:w-auto items-center justify-center gap-2.5 rounded-xl bg-indigo-600 px-7 font-bold text-sm text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 hover:shadow-xl hover:shadow-indigo-600/40 active:scale-[0.98] transition-all cursor-pointer"
+            className={`flex h-12 w-full sm:w-auto items-center justify-center gap-2.5 rounded-xl bg-indigo-600 px-7 font-bold text-sm text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 hover:shadow-xl hover:shadow-indigo-600/40 active:scale-[0.98] transition-all cursor-pointer ${
+              demoLoading ? 'animate-shadow-pulse pointer-events-none' : ''
+            }`}
           >
             {demoLoading ? (
               <>
-                <ShadowPulseDot />
+                <ShadowPulseDot variant="white" />
                 <span>Launching Instant Demo...</span>
               </>
             ) : (
@@ -112,7 +114,7 @@ export function LandingHero() {
           </span>
           <span className="flex items-center gap-1.5 font-medium">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-            No Spinners • Shadow Pulse Feedback
+            Instant UPI & Cash Settlement
           </span>
           <span className="flex items-center gap-1.5 font-medium">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />

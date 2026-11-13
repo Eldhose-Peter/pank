@@ -2,11 +2,32 @@
 
 import React from 'react';
 
-export function ShadowPulseDot({ className = '' }: { className?: string }) {
+export function ShadowPulseDot({
+  className = '',
+  variant = 'white',
+}: {
+  className?: string;
+  variant?: 'white' | 'primary' | 'emerald';
+}) {
+  const isWhite = variant === 'white';
+  const isEmerald = variant === 'emerald';
+
   return (
     <span className={`relative inline-flex items-center justify-center ${className}`}>
-      <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-indigo-400 opacity-75 animate-ping" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)]" />
+      <span
+        className={`absolute inline-flex h-2.5 w-2.5 rounded-full opacity-75 animate-ping ${
+          isWhite ? 'bg-indigo-300' : isEmerald ? 'bg-emerald-400' : 'bg-indigo-400'
+        }`}
+      />
+      <span
+        className={`relative inline-flex h-2 w-2 rounded-full ${
+          isWhite
+            ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.95)]'
+            : isEmerald
+            ? 'bg-emerald-600 dark:bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.8)]'
+            : 'bg-indigo-600 dark:bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]'
+        }`}
+      />
     </span>
   );
 }

@@ -38,10 +38,19 @@ body {
 
 @keyframes shadowPulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2);
   }
   50% {
-    box-shadow: 0 0 24px 6px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 20px 4px rgba(99, 102, 241, 0.45);
+  }
+}
+
+@keyframes shadowPulseEmerald {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.45);
   }
 }
 
@@ -63,6 +72,10 @@ body {
   animation: shadowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+.animate-shadow-pulse-emerald {
+  animation: shadowPulseEmerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 .animate-scale-check {
   animation: scaleCheck 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -76,6 +89,18 @@ body {
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s infinite ease-in-out;
+}
+
+@media (prefers-color-scheme: dark) {
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(39, 39, 42, 0.5) 0%,
+      rgba(63, 63, 70, 0.85) 50%,
+      rgba(39, 39, 42, 0.5) 100%
+    );
+    background-size: 200% 100%;
+  }
 }
 
 .dark .skeleton-shimmer {

@@ -87,7 +87,9 @@ function JoinGroupContent({ token }: { token: string }) {
             <button
               onClick={handleAccept}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+              className={`flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer ${
+                loading ? 'animate-shadow-pulse pointer-events-none' : ''
+              }`}
             >
               {loading ? (
                 <>

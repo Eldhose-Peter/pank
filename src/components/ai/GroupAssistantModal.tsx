@@ -165,7 +165,7 @@ export function GroupAssistantModal({
           ))}
 
           {loading && (
-            <div className="flex items-center gap-2.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 px-4 py-2.5 text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in">
+            <div className="flex items-center gap-2.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 px-4 py-2.5 text-xs text-indigo-700 dark:text-indigo-300 animate-in fade-in animate-shadow-pulse">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
@@ -211,7 +211,9 @@ export function GroupAssistantModal({
           <button
             type="submit"
             disabled={loading || !inputQuery.trim()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none active:scale-[0.95] transition-all cursor-pointer"
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none active:scale-[0.95] transition-all cursor-pointer ${
+              loading ? 'animate-shadow-pulse pointer-events-none' : ''
+            }`}
           >
             {loading ? <ShadowPulseDot /> : <Send className="h-4 w-4" />}
           </button>

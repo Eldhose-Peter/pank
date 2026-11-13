@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Handshake, AlertCircle } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
@@ -47,6 +47,19 @@ export function SettleUpModal({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPayerMemberId(defaultPayerId || members[0]?.id || '');
+      setPayeeMemberId(
+        defaultPayeeId || members.find((m) => m.id !== (defaultPayerId || members[0]?.id))?.id || ''
+      );
+      setAmountInput(
+        defaultAmountMinor !== undefined ? (defaultAmountMinor / 100).toFixed(2) : ''
+      );
+      setError(null);
+    }
+  }, [isOpen, defaultPayerId, defaultPayeeId, defaultAmountMinor, members]);
 
   if (!isOpen) return null;
 
@@ -226,7 +239,9 @@ export function SettleUpModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
+              className={`flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
+                loading ? 'animate-shadow-pulse-emerald pointer-events-none' : ''
+              }`}
             >
               {loading ? (
                 <>

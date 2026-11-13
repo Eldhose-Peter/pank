@@ -675,7 +675,9 @@ export function AiExpenseModal({
                           type="button"
                           onClick={() => handleParse()}
                           disabled={billParsing}
-                          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
+                          className={`inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
+                            billParsing ? 'animate-shadow-pulse pointer-events-none' : ''
+                          }`}
                         >
                           {billParsing ? (
                             <>
@@ -798,7 +800,9 @@ export function AiExpenseModal({
                         type="button"
                         onClick={() => handleParse()}
                         disabled={parsing || voiceParsing || !promptText.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer"
+                        className={`inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
+                          parsing ? 'animate-shadow-pulse pointer-events-none' : ''
+                        }`}
                       >
                         {parsing ? (
                           <>
@@ -840,7 +844,7 @@ export function AiExpenseModal({
                   )}
 
                   {voiceParsing && (
-                    <div className="flex items-center gap-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3.5 py-2 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in">
+                    <div className="flex items-center gap-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-3.5 py-2 text-xs text-violet-600 dark:text-violet-400 animate-in fade-in animate-shadow-pulse">
                       <span className="relative flex h-2 w-2 shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-600 shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
@@ -1175,7 +1179,9 @@ export function AiExpenseModal({
                       type="button"
                       onClick={() => handleRefineDraft()}
                       disabled={refining || voiceParsing || !refineText.trim()}
-                      className="h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer"
+                      className={`h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs px-4 shrink-0 shadow-sm disabled:opacity-40 active:scale-[0.98] transition-all cursor-pointer ${
+                        refining ? 'animate-shadow-pulse pointer-events-none' : ''
+                      }`}
                     >
                       {refining ? (
                         <>
@@ -1269,7 +1275,14 @@ export function AiExpenseModal({
                   type="button"
                   onClick={handleConfirmDraft}
                   disabled={confirming || draft.status !== 'ready_for_review'}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer"
+                  title={
+                    draft.status !== 'ready_for_review'
+                      ? 'Please answer clarification questions or refine split first'
+                      : 'Confirm and save expense to database'
+                  }
+                  className={`inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all cursor-pointer ${
+                    confirming ? 'animate-shadow-pulse-emerald pointer-events-none' : ''
+                  }`}
                 >
                   {confirming ? (
                     <>

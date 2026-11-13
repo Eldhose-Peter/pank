@@ -32,6 +32,7 @@ import { InviteModal } from '@/components/groups/InviteModal';
 import { AiExpenseModal } from '@/components/ai/AiExpenseModal';
 import { GroupAssistantModal } from '@/components/ai/GroupAssistantModal';
 import { useToast } from '@/components/ui/Toast';
+import { ShadowPulseDot } from '@/components/ui/ShadowLoader';
 
 interface GroupData {
   id: string;
@@ -159,6 +160,10 @@ export function GroupDetailClient({
   const [settlePayeeId, setSettlePayeeId] = useState<string | undefined>();
   const [settleAmount, setSettleAmount] = useState<number | undefined>();
 
+  // Deletion loading feedback
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
+  const [deletingSettlementId, setDeletingSettlementId] = useState<string | null>(null);
+
   const currentMember = members.find((m) => m.userId === currentUserId);
 
   const loadAllData = async () => {
@@ -207,13 +212,14 @@ export function GroupDetailClient({
 
   const handleDeleteExpense = async (expenseId: string, expenseTitle: string) => {
     if (!confirm(`Are you sure you want to delete "${expenseTitle}"?`)) return;
+    setDeletingExpenseId(expenseId);
     try {
       const res = await fetch(`/api/groups/${groupId}/expenses/${expenseId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         toast.success(`Deleted expense "${expenseTitle}"`);
-        loadAllData();
+        await loadAllData();
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to delete expense');
@@ -221,18 +227,21 @@ export function GroupDetailClient({
     } catch (err) {
       console.error('Delete expense error:', err);
       toast.error('Failed to delete expense');
+    } finally {
+      setDeletingExpenseId(null);
     }
   };
 
   const handleDeleteSettlement = async (settlementId: string) => {
     if (!confirm('Are you sure you want to revert this settlement?')) return;
+    setDeletingSettlementId(settlementId);
     try {
       const res = await fetch(`/api/groups/${groupId}/settlements/${settlementId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         toast.success('Settlement reverted and debts restored');
-        loadAllData();
+        await loadAllData();
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to revert settlement');
@@ -240,6 +249,8 @@ export function GroupDetailClient({
     } catch (err) {
       console.error('Delete settlement error:', err);
       toast.error('Failed to revert settlement');
+    } finally {
+      setDeletingSettlementId(null);
     }
   };
 
@@ -388,6 +399,41 @@ export function GroupDetailClient({
           <p className="mt-1 text-[11px] text-zinc-400">Simplified min-cash-flow paths</p>
         </div>
       </div>
+
+      {/* Solo Member Onboarding Guidance Notice */}
+      {members.length <= 1 && (
+        <div className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 sm:p-5 dark:border-indigo-900/60 dark:bg-indigo-950/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm shadow-indigo-500/5">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 shadow-2xs">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
+                You're the only member in this group!
+              </h4>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed">
+                Add friends or create placeholder members to split shared bills and track balances together.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setIsAddMemberOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Add Friend</span>
+            </button>
+            <button
+              onClick={() => setIsInviteOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-2xs hover:bg-indigo-50 dark:border-indigo-800 dark:bg-zinc-900 dark:text-indigo-300 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Share2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Invite</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation with Clear Active State & Whitespace */}
       <div className="mt-10 border-b border-zinc-200 dark:border-zinc-800">
@@ -567,10 +613,15 @@ export function GroupDetailClient({
 
                       <button
                         onClick={() => handleDeleteExpense(expense.id, expense.title)}
-                        className="rounded-xl p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 active:scale-[0.95] transition-all cursor-pointer"
+                        disabled={deletingExpenseId === expense.id}
+                        className="rounded-xl p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 disabled:opacity-50 active:scale-[0.95] transition-all cursor-pointer"
                         title="Delete expense"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deletingExpenseId === expense.id ? (
+                          <ShadowPulseDot variant="primary" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -826,10 +877,15 @@ export function GroupDetailClient({
                   </span>
                   <button
                     onClick={() => handleDeleteSettlement(s.id)}
-                    className="rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 dark:hover:text-red-400 active:scale-[0.95] transition-all cursor-pointer"
+                    disabled={deletingSettlementId === s.id}
+                    className="rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 dark:hover:text-red-400 disabled:opacity-50 active:scale-[0.95] transition-all cursor-pointer"
                     title="Revert settlement"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {deletingSettlementId === s.id ? (
+                      <ShadowPulseDot variant="primary" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>

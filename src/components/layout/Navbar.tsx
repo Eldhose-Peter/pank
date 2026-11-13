@@ -112,12 +112,14 @@ export function Navbar() {
               <button
                 onClick={handleSignOut}
                 disabled={signingOut}
-                className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer shadow-2xs"
+                className={`flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer shadow-2xs ${
+                  signingOut ? 'animate-shadow-pulse' : ''
+                }`}
                 title="Sign out"
               >
                 {signingOut ? (
                   <>
-                    <ShadowPulseDot />
+                    <ShadowPulseDot variant="primary" />
                     <span className="hidden sm:inline">Signing Out...</span>
                   </>
                 ) : (
