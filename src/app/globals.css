@@ -5,11 +5,13 @@
 :root {
   --background: #fafafa;
   --foreground: #18181b;
+  color-scheme: light;
 }
 
 .dark {
   --background: #09090b;
   --foreground: #f4f4f5;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -38,6 +40,31 @@ body {
 /* Better mobile tap interactions */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure form controls inherit appropriate browser color-scheme and caret visibility */
+input, textarea, select {
+  color-scheme: light;
+}
+
+input, textarea {
+  caret-color: #4f46e5;
+}
+
+.dark input, .dark textarea, .dark select {
+  color-scheme: dark;
+}
+
+.dark input, .dark textarea {
+  caret-color: #818cf8;
+}
+
+/* Prevent autofill styling from breaking contrast */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--foreground);
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Hide scrollbars for touch scroll areas while preserving scroll behavior */

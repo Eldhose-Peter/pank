@@ -223,7 +223,7 @@ export function GroupAssistantModal({
             placeholder="Ask anything about balances, debts..."
             disabled={loading}
             maxLength={300}
-            className="flex-1 min-h-[44px] rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 sm:px-4 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all"
+            className="flex-1 min-h-[44px] rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 sm:px-4 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 caret-indigo-600 dark:caret-indigo-400 transition-all"
           />
           <button
             type="submit"

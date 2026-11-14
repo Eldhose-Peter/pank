@@ -740,7 +740,7 @@ export function AiExpenseModal({
                             : '🎤 Recording for Gemini AI... tap "Stop Rec" when done'
                           : 'e.g. I paid ₹2,400 for dinner. Split it equally between me, Rahul, Priya and Arjun.'
                       }
-                      className="w-full bg-transparent p-3.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:text-white resize-none"
+                      className="w-full bg-transparent p-3.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none resize-none caret-indigo-600 dark:caret-indigo-400"
                       disabled={parsing || voiceParsing}
                     />
 
@@ -995,7 +995,7 @@ export function AiExpenseModal({
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full min-h-[44px] text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500"
+                          className="w-full min-h-[44px] text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3.5 py-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 caret-indigo-600 dark:caret-indigo-400 transition-colors"
                         />
                       </div>
                       <div>
@@ -1005,7 +1005,7 @@ export function AiExpenseModal({
                           step="0.01"
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
-                          className="w-full min-h-[44px] text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5 dark:bg-zinc-900 mt-1 focus:ring-2 focus:ring-indigo-500 font-mono"
+                          className="w-full min-h-[44px] text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3.5 py-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono caret-indigo-600 dark:caret-indigo-400 transition-colors"
                         />
                       </div>
                     </div>
@@ -1187,7 +1187,7 @@ export function AiExpenseModal({
                         }}
                         placeholder="e.g. Alice had pizza, Bob had pasta..."
                         disabled={refining || voiceParsing}
-                        className="flex-1 min-h-[44px] text-base sm:text-sm rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+                        className="flex-1 min-h-[44px] text-base sm:text-sm rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-zinc-900 px-3.5 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 caret-violet-600 dark:caret-violet-400 transition-colors"
                       />
                     </div>
 
