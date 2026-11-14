@@ -23,6 +23,8 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
+import { compressImage } from '@/lib/image-compression';
+import { parseJsonResponse } from '@/lib/safe-fetch';
 import type { ExpenseDraftPreview, ClarificationQuestion } from '@/modules/ai/types';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -80,6 +82,7 @@ export function AiExpenseModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [billParsing, setBillParsing] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [showReceiptItems, setShowReceiptItems] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -87,21 +90,35 @@ export function AiExpenseModal({
   const [refineText, setRefineText] = useState('');
   const [refining, setRefining] = useState(false);
 
-  const handleBillUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBillUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      setError('File is too large. Maximum size is 15MB.');
+    if (file.size > 25 * 1024 * 1024) {
+      setError('File is too large. Maximum size is 25MB.');
       return;
     }
 
-    setSelectedFile(file);
+    setError(null);
     setInputTab('receipt');
+
     if (file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file);
       setFilePreviewUrl(url);
+      setSelectedFile(file);
+
+      // Client-side compression: safely keeps uploads well within Vercel's 4.5MB payload limit
+      try {
+        setCompressing(true);
+        const compressed = await compressImage(file, 1800, 0.82);
+        setSelectedFile(compressed);
+      } catch (err) {
+        console.warn('Image optimization skipped:', err);
+      } finally {
+        setCompressing(false);
+      }
     } else {
+      setSelectedFile(file);
       setFilePreviewUrl(null);
     }
   };
@@ -182,10 +199,7 @@ export function AiExpenseModal({
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to parse voice input');
-      }
+      const data = await parseJsonResponse(res);
 
       if (draft) {
         setDraft(data.draft);
@@ -261,18 +275,21 @@ export function AiExpenseModal({
       setError(null);
       setBillParsing(true);
       try {
+        let fileToSend = selectedFile;
+        // Safety guarantee: If image is still > 2MB, compress before uploading
+        if (fileToSend.type.startsWith('image/') && fileToSend.size > 2 * 1024 * 1024) {
+          fileToSend = await compressImage(fileToSend, 1800, 0.82);
+        }
+
         const formData = new FormData();
-        formData.append('file', selectedFile);
+        formData.append('file', fileToSend);
 
         const res = await fetch(`/api/groups/${groupId}/ai/bill-parse`, {
           method: 'POST',
           body: formData,
         });
 
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to scan bill');
-        }
+        const data = await parseJsonResponse(res);
 
         setDraft(data.draft);
         setEditTitle(data.draft.title);
@@ -300,10 +317,7 @@ export function AiExpenseModal({
         body: JSON.stringify({ input: text }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to parse expense');
-      }
+      const data = await parseJsonResponse(res);
 
       setDraft(data.draft);
       setEditTitle(data.draft.title);
@@ -330,10 +344,7 @@ export function AiExpenseModal({
         body: JSON.stringify({ instructions }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to refine split');
-      }
+      const data = await parseJsonResponse(res);
 
       setDraft(data.draft);
       setEditTitle(data.draft.title);
@@ -370,7 +381,7 @@ export function AiExpenseModal({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ displayName: rawName, isPlaceholder: true }),
           });
-          const memberData = await memberRes.json();
+          const memberData = await parseJsonResponse(memberRes);
           if (memberRes.ok && memberData.member) {
             resolvedParticipantIds.push(memberData.member.id);
           }
@@ -389,10 +400,7 @@ export function AiExpenseModal({
         }),
       });
 
-      const updateData = await updateRes.json();
-      if (!updateRes.ok) {
-        throw new Error(updateData.error || 'Failed to update draft');
-      }
+      const updateData = await parseJsonResponse(updateRes);
 
       setDraft(updateData.draft);
       setClarificationAnswers({});
@@ -423,10 +431,7 @@ export function AiExpenseModal({
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update draft');
-      }
+      const data = await parseJsonResponse(res);
 
       setDraft(data.draft);
       setIsEditing(false);
@@ -447,10 +452,7 @@ export function AiExpenseModal({
         method: 'POST',
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to confirm expense');
-      }
+      const data = await parseJsonResponse(res);
 
       toast.success(`Expense "${draft.title}" confirmed & saved!`);
       onExpenseAdded();
@@ -658,8 +660,10 @@ export function AiExpenseModal({
                             <p className="text-sm font-bold text-zinc-900 dark:text-white truncate max-w-[280px]">
                               {selectedFile.name}
                             </p>
-                            <p className="text-xs text-zinc-500 mt-0.5">
-                              {(selectedFile.size / 1024).toFixed(0)} KB · Ready to scan with Gemini Vision OCR
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                              {compressing
+                                ? '⚡ Optimizing image size for fast scan...'
+                                : `${(selectedFile.size / 1024).toFixed(0)} KB · Ready to scan with Gemini Vision OCR`}
                             </p>
                           </div>
                         </div>
@@ -687,15 +691,20 @@ export function AiExpenseModal({
                         <button
                           type="button"
                           onClick={() => handleParse()}
-                          disabled={billParsing}
+                          disabled={billParsing || compressing}
                           className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer ${
-                            billParsing ? 'animate-shadow-pulse pointer-events-none' : ''
+                            billParsing || compressing ? 'animate-shadow-pulse pointer-events-none' : ''
                           }`}
                         >
                           {billParsing ? (
                             <>
                               <ShadowPulseDot />
                               <span>Scanning & Itemizing...</span>
+                            </>
+                          ) : compressing ? (
+                            <>
+                              <ShadowPulseDot variant="white" />
+                              <span>Optimizing...</span>
                             </>
                           ) : (
                             <>

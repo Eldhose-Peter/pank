@@ -12,6 +12,7 @@ import {
   Scale 
 } from 'lucide-react';
 import { ShadowPulseDot } from '@/components/ui/ShadowLoader';
+import { parseJsonResponse } from '@/lib/safe-fetch';
 
 interface GroupAssistantModalProps {
   isOpen: boolean;
@@ -72,10 +73,7 @@ export function GroupAssistantModal({
         body: JSON.stringify({ query: q, sessionId }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to get answer');
-      }
+      const data = await parseJsonResponse(res);
 
       if (data.sessionId && !sessionId) {
         setSessionId(data.sessionId);

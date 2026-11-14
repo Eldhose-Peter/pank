@@ -5,6 +5,8 @@ import { DraftService } from '@/modules/ai/draft-service';
 import { GeminiAIClient } from '@/modules/ai/gemini-client';
 import { GroupError } from '@/modules/groups/errors';
 
+export const maxDuration = 60;
+
 /**
  * POST /api/groups/[groupId]/ai/bill-parse
  *
