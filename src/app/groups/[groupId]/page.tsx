@@ -57,7 +57,7 @@ async function GroupPageContent({ params }: { params: Promise<{ groupId: string 
         <h2 className="mt-4 text-xl font-bold text-zinc-900 dark:text-white">
           {err.message || 'Group not found'}
         </h2>
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           You may not have permission to view this group or it may not exist.
         </p>
         <Link

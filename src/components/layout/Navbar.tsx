@@ -12,6 +12,7 @@ import {
   LayoutDashboard 
 } from 'lucide-react';
 import { ShadowPulseDot } from '@/components/ui/ShadowLoader';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface UserProfile {
   id: string;
@@ -94,7 +95,9 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <ThemeToggle />
+
           {loading ? (
             <div className="h-9 w-20 sm:w-24 rounded-xl skeleton-shimmer shadow-xs" />
           ) : user ? (
@@ -105,7 +108,7 @@ export function Navbar() {
                 </div>
                 <div className="hidden md:block text-left text-xs">
                   <div className="font-bold text-zinc-900 dark:text-zinc-100 leading-tight">{user.fullName}</div>
-                  <div className="text-[11px] text-zinc-400 truncate max-w-[140px] leading-tight">{user.email}</div>
+                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate max-w-[140px] leading-tight">{user.email}</div>
                 </div>
               </div>
 

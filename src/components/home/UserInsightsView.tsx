@@ -245,7 +245,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-white truncate">
             {formatMinorUnits(activeCurrencyTotals.totalOutofPocketOwed, selectedCurrency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400 truncate">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
             Your out-of-pocket share
           </p>
         </div>
@@ -261,7 +261,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-indigo-600 dark:text-indigo-400 truncate">
             {formatMinorUnits(activeCurrencyTotals.totalPaidUpfront, selectedCurrency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400 truncate">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
             Paid on behalf of groups
           </p>
         </div>
@@ -277,7 +277,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 truncate">
             {formatMinorUnits(activeCurrencyTotals.totalReimbursed, selectedCurrency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400 truncate">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
             Received from settlements
           </p>
         </div>
@@ -301,7 +301,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
           >
             {formatMinorUnits(activeCurrencyTotals.netBalance, selectedCurrency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400 truncate">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
             {activeCurrencyTotals.netBalance > 0
               ? 'You are owed back'
               : activeCurrencyTotals.netBalance < 0
@@ -328,7 +328,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
           </div>
 
           {activeCategories.length === 0 ? (
-            <div className="py-12 text-center text-xs text-zinc-400">
+            <div className="py-12 text-center text-xs text-zinc-500 dark:text-zinc-400">
               No consumption categorized in {selectedCurrency}.
             </div>
           ) : (
@@ -343,7 +343,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                     fill="transparent"
                     stroke="currentColor"
                     strokeWidth="14"
-                    className="text-zinc-100 dark:text-zinc-800"
+                    className="text-zinc-200 dark:text-zinc-800"
                   />
                   {activeCategories.map((item) => {
                     const strokeDasharray = `${(item.percentage / 100) * donutCircumference} ${donutCircumference}`;
@@ -375,7 +375,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                 </svg>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                  <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Spent
                   </span>
                   <span className="text-sm font-extrabold font-mono text-zinc-900 dark:text-white">
@@ -422,12 +422,12 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                           <span className="font-mono text-xs font-bold text-zinc-900 dark:text-white">
                             {formatMinorUnits(item.totalAmount, selectedCurrency)}
                           </span>
-                          <span className="text-[10px] font-semibold text-zinc-400 font-mono w-9 text-right">
+                          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 font-mono w-9 text-right">
                             {item.percentage}%
                           </span>
                         </div>
                       </div>
-                      <div className="mt-1.5 h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                      <div className="mt-1.5 h-1.5 w-full rounded-full bg-zinc-200/80 dark:bg-zinc-800 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
@@ -461,7 +461,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
 
             <div className="mt-6 w-full">
               {data.monthlyTrends.length === 0 ? (
-                <div className="py-12 text-center text-xs text-zinc-400">
+                <div className="py-12 text-center text-xs text-zinc-500 dark:text-zinc-400">
                   No monthly activity recorded yet.
                 </div>
               ) : (
@@ -494,7 +494,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                                 y2={y}
                                 stroke="currentColor"
                                 strokeDasharray="2 3"
-                                className="text-zinc-100 dark:text-zinc-800"
+                                className="text-zinc-200 dark:text-zinc-800"
                               />
                             );
                           })}
@@ -550,7 +550,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                                   className={`text-[10px] font-mono ${
                                     isHovered
                                       ? 'fill-purple-600 dark:fill-purple-300 font-bold'
-                                      : 'fill-zinc-400 dark:fill-zinc-500'
+                                      : 'fill-zinc-500 dark:fill-zinc-400'
                                   }`}
                                 >
                                   {trend.label.split(' ')[0]}
@@ -562,7 +562,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                       </div>
 
                       {/* Interactive Month Inspect Badge */}
-                      <div className="mt-2 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/40 flex items-center justify-between text-xs">
+                      <div className="mt-2 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/40 flex items-center justify-between text-xs">
                         {hoveredMonthIndex !== null && trends[hoveredMonthIndex] ? (
                           <>
                             <span className="font-semibold text-zinc-700 dark:text-zinc-300">
@@ -576,7 +576,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                             </span>
                           </>
                         ) : (
-                          <span className="text-zinc-400">Hover or tap bars to view monthly spending</span>
+                          <span className="text-zinc-500 dark:text-zinc-400">Hover or tap bars to view monthly spending</span>
                         )}
                       </div>
                     </div>
@@ -586,7 +586,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
             </div>
           </div>
 
-          <div className="mt-3 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3.5 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/40 text-xs text-zinc-500 flex items-center justify-between">
+          <div className="mt-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3.5 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/40 text-xs text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
             <span>Tracking true personal living expenses vs. shared funding</span>
             <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
           </div>
@@ -595,7 +595,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
 
       {/* 5. FREQUENT CO-SPENDERS / TOP SPLIT PARTNERS */}
       <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 sm:p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-4">
+        <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800 pb-4">
           <div>
             <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <Users className="h-4 w-4 text-indigo-500" />
@@ -608,7 +608,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
         </div>
 
         {data.topPartners.length === 0 ? (
-          <div className="py-8 text-center text-xs text-zinc-400">
+          <div className="py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
             No mutual split partners found yet.
           </div>
         ) : (
@@ -616,7 +616,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
             {data.topPartners.map((partner) => (
               <div
                 key={partner.memberId}
-                className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/60 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/40"
+                className="flex items-center justify-between rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/40"
               >
                 <div className="flex items-center gap-3 truncate">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 font-bold text-xs dark:bg-indigo-950 dark:text-indigo-300 shadow-2xs">
@@ -626,7 +626,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                     <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white truncate">
                       {partner.displayName}
                     </div>
-                    <div className="text-[11px] text-zinc-400 mt-0.5">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                       {partner.mutualExpenseCount}{' '}
                       {partner.mutualExpenseCount === 1 ? 'shared bill' : 'shared bills'} •{' '}
                       {partner.groupCount} {partner.groupCount === 1 ? 'group' : 'groups'}
@@ -644,9 +644,9 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                       -{formatMinorUnits(Math.abs(partner.netBalance), partner.currency)}
                     </span>
                   ) : (
-                    <span className="text-xs font-semibold text-zinc-400">Settled</span>
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Settled</span>
                   )}
-                  <span className="block text-[10px] text-zinc-400">
+                  <span className="block text-[10px] text-zinc-500 dark:text-zinc-400">
                     {partner.netBalance > 0 ? 'owes you' : partner.netBalance < 0 ? 'you owe' : 'net balance'}
                   </span>
                 </div>

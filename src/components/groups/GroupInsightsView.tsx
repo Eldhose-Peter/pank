@@ -267,7 +267,7 @@ export function GroupInsightsView({
                   fill="transparent"
                   stroke="currentColor"
                   strokeWidth="14"
-                  className="text-zinc-100 dark:text-zinc-800"
+                  className="text-zinc-200 dark:text-zinc-800"
                 />
                 {/* Segment Slices */}
                 {validCategories.map((item) => {
@@ -301,7 +301,7 @@ export function GroupInsightsView({
 
               {/* Center Donut Label */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Total
                 </span>
                 <span className="text-sm font-extrabold font-mono text-zinc-900 dark:text-white">
@@ -348,13 +348,13 @@ export function GroupInsightsView({
                         <span className="font-mono text-xs font-bold text-zinc-900 dark:text-white">
                           {formatMinorUnits(item.totalAmount, data.currency)}
                         </span>
-                        <span className="text-[10px] font-semibold text-zinc-400 font-mono w-9 text-right">
+                        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 font-mono w-9 text-right">
                           {item.percentage}%
                         </span>
                       </div>
                     </div>
                     {/* Segment Progress Bar */}
-                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-zinc-200/80 dark:bg-zinc-800 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -423,7 +423,7 @@ export function GroupInsightsView({
                               y2={y}
                               stroke="currentColor"
                               strokeDasharray="2 3"
-                              className="text-zinc-100 dark:text-zinc-800"
+                              className="text-zinc-200 dark:text-zinc-800"
                             />
                           );
                         })}
@@ -479,7 +479,7 @@ export function GroupInsightsView({
                                 x={x + barWidth / 2}
                                 y={chartHeight + 16}
                                 textAnchor="middle"
-                                className="text-[10px] fill-zinc-400 dark:fill-zinc-500 font-mono"
+                                className="text-[10px] fill-zinc-500 dark:fill-zinc-400 font-mono"
                               >
                                 {point.date.slice(5)}
                               </text>
@@ -495,7 +495,7 @@ export function GroupInsightsView({
           </div>
 
           {/* Active Hover / Peak Tooltip Summary */}
-          <div className="mt-3 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3.5 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/40 flex items-center justify-between text-xs">
+          <div className="mt-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3.5 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/40 flex items-center justify-between text-xs">
             {hoveredTimelineIndex !== null && data.spendingTimeline[hoveredTimelineIndex] ? (
               (() => {
                 const pt = data.spendingTimeline[hoveredTimelineIndex];
@@ -520,7 +520,7 @@ export function GroupInsightsView({
                 </span>
               </>
             ) : (
-              <span className="text-zinc-400">Hover over bars to inspect daily spend totals</span>
+              <span className="text-zinc-500 dark:text-zinc-400">Hover over bars to inspect daily spend totals</span>
             )}
           </div>
         </div>
@@ -528,7 +528,7 @@ export function GroupInsightsView({
 
       {/* 3. BILATERAL PAYER VS. CONSUMER MATRIX */}
       <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 sm:p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-zinc-200/80 dark:border-zinc-800 pb-4">
           <div>
             <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <Award className="h-4 w-4 text-indigo-500" />
@@ -539,7 +539,7 @@ export function GroupInsightsView({
             </p>
           </div>
           {/* Legend */}
-          <div className="flex items-center gap-4 text-[11px] font-semibold text-zinc-500 shrink-0">
+          <div className="flex items-center gap-4 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 shrink-0">
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
               Paid Upfront
@@ -551,7 +551,7 @@ export function GroupInsightsView({
           </div>
         </div>
 
-        <div className="mt-4 divide-y divide-zinc-100 dark:divide-y-zinc-800 space-y-4">
+        <div className="mt-4 divide-y divide-zinc-200/80 dark:divide-zinc-800 space-y-4">
           {data.memberMatrix.map((member) => {
             const isCurrentUser = member.userId === currentUserId;
 
@@ -596,7 +596,7 @@ export function GroupInsightsView({
                 {/* Dual Horizontal Segmented Progress Bars */}
                 <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {/* Paid Bar */}
-                  <div className="rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
+                  <div className="rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800">
                     <div className="flex justify-between text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
                       <span>Paid Upfront:</span>
                       <strong className="font-mono text-indigo-600 dark:text-indigo-400">
@@ -612,7 +612,7 @@ export function GroupInsightsView({
                   </div>
 
                   {/* Consumed Bar */}
-                  <div className="rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
+                  <div className="rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800">
                     <div className="flex justify-between text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
                       <span>Consumed:</span>
                       <strong className="font-mono text-violet-600 dark:text-violet-400">
@@ -637,7 +637,7 @@ export function GroupInsightsView({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {/* Highlight 1: Largest Single Expense */}
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             <Sparkles className="h-3.5 w-3.5 text-amber-500" />
             <span>Largest Bill</span>
           </div>
@@ -650,17 +650,17 @@ export function GroupInsightsView({
                 <span className="text-xl font-extrabold font-mono text-zinc-900 dark:text-white">
                   {formatMinorUnits(data.highlights.largestExpense.amount, data.currency)}
                 </span>
-                <span className="text-xs text-zinc-400">paid by {data.highlights.largestExpense.paidBy}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">paid by {data.highlights.largestExpense.paidBy}</span>
               </div>
             </div>
           ) : (
-            <div className="mt-2 text-xs text-zinc-400">No expenses recorded</div>
+            <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">No expenses recorded</div>
           )}
         </div>
 
         {/* Highlight 2: Top Upfront Financier */}
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             <Award className="h-3.5 w-3.5 text-indigo-500" />
             <span>Trip Financier</span>
           </div>
@@ -673,17 +673,17 @@ export function GroupInsightsView({
                 <span className="text-xl font-extrabold font-mono text-indigo-600 dark:text-indigo-400">
                   {formatMinorUnits(data.highlights.topPayer.amount, data.currency)}
                 </span>
-                <span className="text-xs text-zinc-400">({data.highlights.topPayer.percentage}% of total)</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">({data.highlights.topPayer.percentage}% of total)</span>
               </div>
             </div>
           ) : (
-            <div className="mt-2 text-xs text-zinc-400">No payments logged</div>
+            <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">No payments logged</div>
           )}
         </div>
 
         {/* Highlight 3: Settlement Status Ratio */}
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-4.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
             <span>Settlement Health</span>
           </div>
@@ -692,12 +692,12 @@ export function GroupInsightsView({
               <span className="text-xl font-extrabold font-mono text-zinc-900 dark:text-white">
                 {data.highlights.settledRatio}%
               </span>
-              <span className="text-xs font-mono text-zinc-500">
+              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
                 {formatMinorUnits(data.highlights.settledAmount, data.currency)} settled
               </span>
             </div>
             {/* Progress bar */}
-            <div className="mt-2 h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+            <div className="mt-2 h-2 w-full rounded-full bg-zinc-200/80 dark:bg-zinc-800 overflow-hidden">
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-500"
                 style={{ width: `${data.highlights.settledRatio}%` }}

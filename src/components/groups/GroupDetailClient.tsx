@@ -295,7 +295,7 @@ export function GroupDetailClient({
               {group.description}
             </p>
           ) : (
-            <p className="mt-1.5 text-xs text-zinc-400 italic">
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic">
               {members.length} members sharing expenses
             </p>
           )}
@@ -329,7 +329,7 @@ export function GroupDetailClient({
           {/* Secondary Action: Invite */}
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 sm:px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 sm:px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Share2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             <span>Invite</span>
@@ -338,7 +338,7 @@ export function GroupDetailClient({
           {/* Primary Action 1: Add Manually */}
           <button
             onClick={() => setIsAddExpenseOpen(true)}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3.5 sm:px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-750 active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3.5 sm:px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Add Expense</span>
@@ -365,7 +365,7 @@ export function GroupDetailClient({
           <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-white truncate">
             {formatMinorUnits(balances?.totalGroupSpending || 0, group.currency)}
           </div>
-          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-400 truncate">Total group spending</p>
+          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 truncate">Total group spending</p>
         </div>
 
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 sm:p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
@@ -376,7 +376,7 @@ export function GroupDetailClient({
           <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-white">
             {expenses.length}
           </div>
-          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-400">Logged bills</p>
+          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">Logged bills</p>
         </div>
 
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 sm:p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
@@ -387,7 +387,7 @@ export function GroupDetailClient({
           <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-white">
             {members.length}
           </div>
-          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-400">Participants</p>
+          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">Participants</p>
         </div>
 
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 sm:p-5 shadow-sm shadow-zinc-200/50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none transition-all">
@@ -398,7 +398,7 @@ export function GroupDetailClient({
           <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-extrabold font-mono text-indigo-600 dark:text-indigo-400">
             {balances?.simplifiedDebts.length || 0}
           </div>
-          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-400">Simplified paths</p>
+          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">Simplified paths</p>
         </div>
       </div>
 
@@ -654,15 +654,15 @@ export function GroupDetailClient({
 
                   {/* Expandable splits breakdown */}
                   {isExpanded && (
-                    <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800/80">
-                      <div className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
+                    <div className="mt-4 border-t border-zinc-200/80 pt-4 dark:border-zinc-800/80">
+                      <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2.5">
                         Participant Split Breakdown
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                         {expense.splits.map((s) => (
                           <div
                             key={s.id || s.groupMemberId}
-                            className="flex items-center justify-between rounded-xl bg-zinc-50/80 px-3.5 py-2 text-xs border border-zinc-100 dark:border-zinc-800 dark:bg-zinc-850/60 min-h-[38px]"
+                            className="flex items-center justify-between rounded-xl bg-zinc-50/80 px-3.5 py-2 text-xs border border-zinc-200/80 dark:border-zinc-800 dark:bg-zinc-800/60 min-h-[38px]"
                           >
                             <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                               {getMemberName(s.groupMemberId)}
@@ -808,15 +808,15 @@ export function GroupDetailClient({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80 text-xs">
+                    <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-zinc-200/80 dark:border-zinc-800/80 text-xs">
                       <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 p-2.5">
-                        <span className="text-[10px] uppercase font-semibold text-zinc-400 block tracking-wider">Total Paid</span>
+                        <span className="text-[10px] uppercase font-semibold text-zinc-500 dark:text-zinc-400 block tracking-wider">Total Paid</span>
                         <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200 mt-0.5 block text-xs">
                           {formatMinorUnits(mb.totalPaid, group.currency)}
                         </span>
                       </div>
                       <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 p-2.5">
-                        <span className="text-[10px] uppercase font-semibold text-zinc-400 block tracking-wider">Share Owed</span>
+                        <span className="text-[10px] uppercase font-semibold text-zinc-500 dark:text-zinc-400 block tracking-wider">Share Owed</span>
                         <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200 mt-0.5 block text-xs">
                           {formatMinorUnits(mb.totalOwed, group.currency)}
                         </span>
@@ -830,7 +830,7 @@ export function GroupDetailClient({
             {/* Desktop Table (hidden sm:block) */}
             <div className="hidden sm:block overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <table className="min-w-full divide-y divide-zinc-200 text-left text-sm dark:divide-zinc-800">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   <tr>
                     <th className="px-5 py-3.5">Member</th>
                     <th className="px-5 py-3.5">Total Paid</th>
@@ -838,7 +838,7 @@ export function GroupDetailClient({
                     <th className="px-5 py-3.5 text-right">Net Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                <tbody className="divide-y divide-zinc-200/70 dark:divide-zinc-800/60">
                   {balances && Object.values(balances.balances).map((mb) => {
                     const isPositive = mb.netBalance > 0;
                     const isZero = mb.netBalance === 0;
@@ -848,7 +848,7 @@ export function GroupDetailClient({
                         <td className="px-5 py-4 font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
                           <span>{mb.displayName}</span>
                           {mb.isPlaceholder && (
-                            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800">
+                            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:text-zinc-400 dark:bg-zinc-800">
                               Placeholder
                             </span>
                           )}
@@ -861,7 +861,7 @@ export function GroupDetailClient({
                         </td>
                         <td className="px-5 py-4 text-right font-mono font-bold text-sm">
                           {isZero ? (
-                            <span className="text-zinc-400 font-medium">Settled (0.00)</span>
+                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">Settled (0.00)</span>
                           ) : isPositive ? (
                             <span className="text-emerald-600 dark:text-emerald-400">
                               +{formatMinorUnits(mb.netBalance, group.currency)}
@@ -972,14 +972,14 @@ export function GroupDetailClient({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-zinc-100 sm:border-t-0 dark:border-zinc-800/60">
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-zinc-200/80 sm:border-t-0 dark:border-zinc-800/60">
                   <span className="font-mono font-bold text-base sm:text-lg text-emerald-600 dark:text-emerald-400">
                     {formatMinorUnits(s.amount, s.currency)}
                   </span>
                   <button
                     onClick={() => handleDeleteSettlement(s.id)}
                     disabled={deletingSettlementId === s.id}
-                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 dark:hover:text-red-400 disabled:opacity-50 active:scale-[0.95] transition-all cursor-pointer"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl p-2 text-zinc-500 dark:text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 dark:hover:text-red-400 disabled:opacity-50 active:scale-[0.95] transition-all cursor-pointer"
                     title="Revert settlement"
                     aria-label="Revert settlement"
                   >
@@ -1040,7 +1040,7 @@ export function GroupDetailClient({
                     <div className="text-sm font-bold text-zinc-900 dark:text-white">
                       {m.displayName}
                     </div>
-                    <div className="text-xs text-zinc-400 capitalize mt-0.5">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400 capitalize mt-0.5">
                       {m.role} {m.isPlaceholder ? '• Placeholder' : '• Registered User'}
                     </div>
                   </div>

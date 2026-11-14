@@ -203,7 +203,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
 
               {/* 3 Step Visual Guide */}
               <div className="mx-auto mt-6 sm:mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:gap-4 text-left sm:grid-cols-3">
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
+                <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 font-bold text-xs dark:bg-indigo-950 dark:text-indigo-300">
                     1
                   </div>
@@ -215,7 +215,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
+                <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-700 font-bold text-xs dark:bg-purple-950 dark:text-purple-300">
                     2
                   </div>
@@ -227,7 +227,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
+                <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800/60 dark:bg-zinc-800/40">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-xs dark:bg-emerald-950 dark:text-emerald-300">
                     3
                   </div>
@@ -242,7 +242,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
 
               {/* Quick Inspiration Pills */}
               <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-2 text-xs">
-                <span className="font-medium text-zinc-400 w-full sm:w-auto text-center">Quick ideas:</span>
+                <span className="font-medium text-zinc-500 dark:text-zinc-400 w-full sm:w-auto text-center">Quick ideas:</span>
                 {[
                   { label: '🏖️ Goa Vacation', preset: 'Goa Vacation 2026' },
                   { label: '🏠 Flat 402 Rent & Bills', preset: 'Flat 402 Expenses' },
@@ -297,15 +297,15 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
                         {group.description}
                       </p>
                     ) : (
-                      <p className="mt-1.5 text-xs text-zinc-400 italic">
+                      <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic">
                         No description provided
                       </p>
                     )}
                   </div>
 
-                  <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-zinc-100 pt-3.5 sm:pt-4 text-xs text-zinc-500 dark:border-zinc-800">
+                  <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-zinc-200/80 pt-3.5 sm:pt-4 text-xs text-zinc-500 dark:border-zinc-800">
                     <span className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5 text-zinc-400" />
+                      <Users className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                       View Ledger & Splits
                     </span>
                     <span className="font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:underline">
