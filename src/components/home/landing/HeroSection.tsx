@@ -29,7 +29,7 @@ export function HeroSection({ onDemoClick, demoLoading }: HeroSectionProps) {
   }, []);
 
   return (
-    <section className="relative isolate overflow-hidden pt-6 pb-20 sm:pt-14 sm:pb-32">
+    <section className="relative isolate overflow-hidden pt-6 pb-14 sm:pt-12 sm:pb-20">
       {/* Cinematic Ambient Glow & Subtle Parallax Mesh */}
       <div 
         aria-hidden="true" 
@@ -145,7 +145,7 @@ export function HeroSection({ onDemoClick, demoLoading }: HeroSectionProps) {
 
         {/* Stagger 5: Cinematic Interactive Hero Card Showcase */}
         <div 
-          className={`mt-14 sm:mt-18 mx-auto max-w-4xl transition-all duration-1000 delay-500 ${
+          className={`mt-10 sm:mt-12 mx-auto max-w-4xl transition-all duration-1000 delay-500 ${
             mounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-[0.97]'
           }`}
         >

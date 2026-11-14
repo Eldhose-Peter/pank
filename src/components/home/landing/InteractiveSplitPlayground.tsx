@@ -90,21 +90,21 @@ export function InteractiveSplitPlayground() {
   const scenario = scenarios.find((s) => s.id === selectedId) || scenarios[0];
 
   return (
-    <section ref={ref} className="py-20 sm:py-32 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+    <section ref={ref} className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       {/* Header */}
       <div 
-        className={`text-center max-w-3xl mx-auto transition-all duration-700 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        className={`text-center max-w-2xl mx-auto transition-all duration-700 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
         <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/60 px-3.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
           <Zap className="h-3.5 w-3.5" />
           <span>Interactive Playground</span>
         </div>
-        <h2 className="mt-4 text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
+        <h2 className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
           See Debt Simplification in Action
         </h2>
-        <p className="mt-4 text-base text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
           Pick a scenario below to see how our greedy min-cash-flow algorithm cuts messy IOUs down to the absolute minimum transfers.
         </p>
 

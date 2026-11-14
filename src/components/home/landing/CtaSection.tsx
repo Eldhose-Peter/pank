@@ -14,10 +14,10 @@ export function CtaSection({ onDemoClick, demoLoading }: CtaSectionProps) {
   const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
 
   return (
-    <section ref={ref} className="py-20 sm:py-32 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+    <section ref={ref} className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <div 
-        className={`relative overflow-hidden rounded-3xl border border-indigo-200/80 dark:border-indigo-900/50 bg-gradient-to-br from-indigo-900 via-indigo-950 to-zinc-950 px-6 py-16 sm:px-16 sm:py-24 text-center text-white shadow-2xl transition-all duration-700 ${
-          isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-[0.98]'
+        className={`relative overflow-hidden rounded-3xl border border-indigo-200/80 dark:border-indigo-900/50 bg-gradient-to-br from-indigo-900 via-indigo-950 to-zinc-950 px-6 py-12 sm:px-12 sm:py-16 text-center text-white shadow-2xl transition-all duration-700 ${
+          isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-[0.98]'
         }`}
       >
         {/* Ambient Glows */}
