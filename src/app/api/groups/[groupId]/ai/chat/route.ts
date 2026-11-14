@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ConversationService } from '@/modules/ai/conversation-service';
 import { GroupError } from '@/modules/groups/errors';
+import { validateChatQuery } from '@/modules/ai/guardrails';
 
 export async function POST(
   request: Request,
@@ -21,8 +22,9 @@ export async function POST(
     const body = await request.json();
     const { query, sessionId } = body;
 
-    if (!query || typeof query !== 'string' || query.trim().length === 0) {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const validation = validateChatQuery(query);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const conversationService = new ConversationService(supabase);

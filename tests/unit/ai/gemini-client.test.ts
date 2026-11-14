@@ -152,4 +152,97 @@ describe('AI: GeminiAIClient Expense Parsing', () => {
     expect(refined.amount).toBe(300);
     expect(refined.participants.length).toBeGreaterThan(0);
   });
+
+  describe('answerGroupQuery Guardrails & Negative Constraints', () => {
+    const contextSummary = `Total Group Spending: INR 5000.00
+Member Net Balances:
+- Rahul owes INR 1500.00
+- Eldho is owed INR 1500.00
+Simplified Debts:
+- Rahul owes Eldho: INR 1500.00`;
+
+    it('offline mode: returns simulated summary for on-topic questions', async () => {
+      const answer = await client.answerGroupQuery('Who owes whom?', contextSummary);
+      expect(answer).toContain('Based on the group records:');
+      expect(answer).toContain('Rahul owes Eldho: INR 1500.00');
+    });
+
+    it('offline mode: immediately refuses off-topic coding queries', async () => {
+      const answer = await client.answerGroupQuery(
+        'Write a python script to calculate debts',
+        contextSummary
+      );
+      expect(answer).toBe(
+        "I can only help with questions about your group's expenses, balances, and settlements."
+      );
+    });
+
+    it('offline mode: refuses creative writing and trivia queries', async () => {
+      const storyAnswer = await client.answerGroupQuery(
+        'Write a poem about splitting bills with friends',
+        contextSummary
+      );
+      expect(storyAnswer).toBe(
+        "I can only help with questions about your group's expenses, balances, and settlements."
+      );
+
+      const triviaAnswer = await client.answerGroupQuery(
+        'What is the capital of France?',
+        contextSummary
+      );
+      expect(triviaAnswer).toBe(
+        "I can only help with questions about your group's expenses, balances, and settlements."
+      );
+    });
+
+    it('configures systemInstruction, maxOutputTokens: 300, and temperature: 0.1 on Gemini generateContent', async () => {
+      interface MockContentParams {
+        model: string;
+        contents: string;
+        config: {
+          systemInstruction: string;
+          temperature: number;
+          maxOutputTokens: number;
+        };
+      }
+      let capturedParams: MockContentParams | null = null;
+      const mockGenerateContent = (params: MockContentParams) => {
+        capturedParams = params;
+        return Promise.resolve({
+          text: 'Rahul owes Eldho ₹1,500.',
+        });
+      };
+
+      const customClient = new GeminiAIClient();
+      // Inject mock client
+      (customClient as unknown as { client: unknown }).client = {
+        models: {
+          generateContent: mockGenerateContent,
+        },
+      };
+
+      const result = await customClient.answerGroupQuery(
+        'Who owes whom in this group?',
+        contextSummary
+      );
+
+      expect(result).toBe('Rahul owes Eldho ₹1,500.');
+      expect(capturedParams).not.toBeNull();
+
+      // Verify token cap and temperature
+      expect(capturedParams!.config.maxOutputTokens).toBe(300);
+      expect(capturedParams!.config.temperature).toBe(0.1);
+
+      // Verify strict domain boundaries and negative constraints in systemInstruction
+      const instruction = capturedParams!.config.systemInstruction;
+      expect(instruction).toContain(
+        "sole purpose is answering questions about this group's expenses, member balances, who owes whom, and settlements"
+      );
+      expect(instruction).toContain('forbidden from writing code, programming scripts');
+      expect(instruction).toContain('general knowledge, roleplay, or creative writing');
+      expect(instruction).toContain(
+        'I can only help with questions about your group\'s expenses, balances, and settlements.'
+      );
+    });
+  });
 });

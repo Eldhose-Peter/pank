@@ -90,12 +90,17 @@ export function GroupAssistantModal({
         },
       ]);
     } catch (err: any) {
+      const isRefusal =
+        err.message?.startsWith('I can only help') ||
+        err.message?.includes('maximum length');
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `Sorry, I encountered an issue: ${err.message || 'Please try again.'}`,
+          content: isRefusal
+            ? err.message
+            : `Sorry, I encountered an issue: ${err.message || 'Please try again.'}`,
         },
       ]);
     } finally {
@@ -217,6 +222,7 @@ export function GroupAssistantModal({
             onChange={(e) => setInputQuery(e.target.value)}
             placeholder="Ask anything about balances, debts..."
             disabled={loading}
+            maxLength={300}
             className="flex-1 min-h-[44px] rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 sm:px-4 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all"
           />
           <button
