@@ -288,7 +288,13 @@ export class InsightsService {
       for (const e of expenseList) {
         if (e.amount > maxExp.amount) maxExp = e;
       }
-      const primaryPayerPayment = paymentsByExpense[maxExp.id]?.[0];
+      const expPayments = paymentsByExpense[maxExp.id] || [];
+      let primaryPayerPayment = expPayments[0];
+      for (const p of expPayments) {
+        if (p.amount_paid > (primaryPayerPayment?.amount_paid || 0)) {
+          primaryPayerPayment = p;
+        }
+      }
       const primaryPayerName = primaryPayerPayment
         ? memberMap[primaryPayerPayment.group_member_id]?.displayName || 'Unknown'
         : 'Unknown';
@@ -625,7 +631,9 @@ export class InsightsService {
         continue;
       }
 
-      const partnerKey = m.user_id ? `user:${m.user_id}` : `member:${m.id}`;
+      const partnerBaseKey = m.user_id ? `user:${m.user_id}` : `member:${m.id}`;
+      const curr = groupMap[m.group_id]?.currency || 'INR';
+      const partnerKey = `${partnerBaseKey}_${curr}`;
       if (!partnerMap[partnerKey]) {
         partnerMap[partnerKey] = {
           userId: m.user_id,
@@ -635,7 +643,7 @@ export class InsightsService {
           mutualExpenseCount: 0,
           totalVolume: 0,
           netBalance: 0,
-          currency: groupMap[m.group_id]?.currency || 'INR',
+          currency: curr,
         };
       }
       partnerMap[partnerKey].sharedGroupIds.add(m.group_id);
@@ -657,7 +665,9 @@ export class InsightsService {
         if (s.group_member_id === callerMemberId) continue;
         const partnerMeta = memberDetailsMap[s.group_member_id];
         if (!partnerMeta) continue;
-        const partnerKey = partnerMeta.userId ? `user:${partnerMeta.userId}` : `member:${partnerMeta.id}`;
+        const partnerBaseKey = partnerMeta.userId ? `user:${partnerMeta.userId}` : `member:${partnerMeta.id}`;
+        const curr = groupMap[exp.group_id]?.currency || 'INR';
+        const partnerKey = `${partnerBaseKey}_${curr}`;
         if (partnerMap[partnerKey]) {
           partnerMap[partnerKey].mutualExpenseCount += 1;
           partnerMap[partnerKey].totalVolume += exp.amount;
@@ -670,6 +680,7 @@ export class InsightsService {
       const callerMemberId = userMemberIdByGroup[gId];
       const gExpenses = activeExpenses.filter((e) => e.group_id === gId);
       const gSettlements = activeSettlements.filter((s) => s.group_id === gId);
+      const curr = groupMap[gId]?.currency || 'INR';
 
       const expRecords: ExpenseRecord[] = gExpenses.map((e) => ({
         id: e.id,
@@ -699,7 +710,8 @@ export class InsightsService {
           // fromMember owes user
           const partnerMeta = memberDetailsMap[debt.fromMemberId];
           if (partnerMeta) {
-            const partnerKey = partnerMeta.userId ? `user:${partnerMeta.userId}` : `member:${partnerMeta.id}`;
+            const partnerBaseKey = partnerMeta.userId ? `user:${partnerMeta.userId}` : `member:${partnerMeta.id}`;
+            const partnerKey = `${partnerBaseKey}_${curr}`;
             if (partnerMap[partnerKey]) {
               partnerMap[partnerKey].netBalance += debt.amount;
             }
@@ -708,7 +720,8 @@ export class InsightsService {
           // user owes toMember
           const partnerMeta = memberDetailsMap[debt.toMemberId];
           if (partnerMeta) {
-            const partnerKey = partnerMeta.userId ? `user:${partnerMeta.userId}` : `member:${partnerMeta.id}`;
+            const partnerBaseKey = partnerMeta.userId ? `user:${partnerMeta.userId}` : `member:${partnerMeta.id}`;
+            const partnerKey = `${partnerBaseKey}_${curr}`;
             if (partnerMap[partnerKey]) {
               partnerMap[partnerKey].netBalance -= debt.amount;
             }

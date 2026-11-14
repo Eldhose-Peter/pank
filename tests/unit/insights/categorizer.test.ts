@@ -13,6 +13,14 @@ describe('Insights Categorizer Engine', () => {
       expect(categorizeExpense('Chai and snacks at tapri')).toBe('food_dining');
     });
 
+    it('does not misclassify bills for dining as utilities', () => {
+      expect(categorizeExpense('Dinner bill')).toBe('food_dining');
+      expect(categorizeExpense('Restaurant bill')).toBe('food_dining');
+      expect(categorizeExpense('Drinks bill')).toBe('food_dining');
+      expect(categorizeExpense('Food bill at cafe')).toBe('food_dining');
+      expect(categorizeExpense('Swiggy bill')).toBe('food_dining');
+    });
+
     it('classifies Hotel Seagull as dining when receipt items contain food & beverages', () => {
       const result = categorizeExpense('Hotel Seagull bill', null, [
         { name: 'Budweiser 650ml' },
@@ -34,6 +42,9 @@ describe('Insights Categorizer Engine', () => {
       expect(categorizeExpense('Indigo flight tickets to Goa')).toBe('transport');
       expect(categorizeExpense('IRCTC train reservation')).toBe('transport');
       expect(categorizeExpense('Metro pass recharge')).toBe('transport');
+      expect(categorizeExpense('Bus to Goa')).toBe('transport');
+      expect(categorizeExpense('Bus fare')).toBe('transport');
+      expect(categorizeExpense('Uber bill')).toBe('transport');
     });
   });
 
@@ -45,6 +56,8 @@ describe('Insights Categorizer Engine', () => {
       expect(categorizeExpense('Hostel bed in Zostel')).toBe('accommodation');
       expect(categorizeExpense('Weekend staycation cottage')).toBe('accommodation');
       expect(categorizeExpense('Guesthouse check-in fee')).toBe('accommodation');
+      expect(categorizeExpense('Hotel Seagull')).toBe('accommodation');
+      expect(categorizeExpense('Hotel Marriott')).toBe('accommodation');
     });
   });
 
@@ -55,6 +68,9 @@ describe('Insights Categorizer Engine', () => {
       expect(categorizeExpense('Instamart vegetables and fruits')).toBe('groceries');
       expect(categorizeExpense('DMart monthly supermarket provisions')).toBe('groceries');
       expect(categorizeExpense('BigBasket daily milk and eggs')).toBe('groceries');
+      expect(categorizeExpense('Grocery bill')).toBe('groceries');
+      expect(categorizeExpense('Quick mart supplies')).toBe('groceries');
+      expect(categorizeExpense('Fruits from market')).toBe('groceries');
     });
   });
 
@@ -66,6 +82,11 @@ describe('Insights Categorizer Engine', () => {
       expect(categorizeExpense('Museum entrance pass')).toBe('entertainment');
       expect(categorizeExpense('Netflix 4K Monthly Subscription')).toBe('entertainment');
       expect(categorizeExpense('Spotify Premium Family')).toBe('entertainment');
+      expect(categorizeExpense('Football match')).toBe('entertainment');
+      expect(categorizeExpense('IPL match')).toBe('entertainment');
+      expect(categorizeExpense('Magic show')).toBe('entertainment');
+      expect(categorizeExpense('Comedy show')).toBe('entertainment');
+      expect(categorizeExpense('Movie bill')).toBe('entertainment');
     });
   });
 
@@ -77,6 +98,10 @@ describe('Insights Categorizer Engine', () => {
       expect(categorizeExpense('Society maintenance charges')).toBe('utilities');
       expect(categorizeExpense('Bharat Gas LPG cylinder')).toBe('utilities');
       expect(categorizeExpense('Maid salary for flat 204')).toBe('utilities');
+      expect(categorizeExpense('Water tanker')).toBe('utilities');
+      expect(categorizeExpense('Water can for kitchen')).toBe('utilities');
+      expect(categorizeExpense('Internet recharge')).toBe('utilities');
+      expect(categorizeExpense('Utility bill')).toBe('utilities');
     });
   });
 
@@ -84,6 +109,7 @@ describe('Insights Categorizer Engine', () => {
     it('falls back gracefully to general for ambiguous or empty input', () => {
       expect(categorizeExpense('Random miscellaneous items')).toBe('general');
       expect(categorizeExpense('Settlement correction')).toBe('general');
+      expect(categorizeExpense('Random bill')).toBe('general');
       expect(categorizeExpense('')).toBe('general');
       expect(categorizeExpense(null, null, null)).toBe('general');
       expect(categorizeExpense(undefined, undefined, undefined)).toBe('general');

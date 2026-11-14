@@ -63,6 +63,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
   const [error, setError] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('INR');
   const [activeCategory, setActiveCategory] = useState<ExpenseCategory | null>(null);
+  const [hoveredMonthIndex, setHoveredMonthIndex] = useState<number | null>(null);
 
   const fetchInsights = async () => {
     try {
@@ -218,7 +219,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
               <button
                 key={curr}
                 onClick={() => setSelectedCurrency(curr)}
-                className={`min-h-[40px] rounded-lg px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                className={`min-h-[44px] rounded-lg px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   selectedCurrency === curr
                     ? 'bg-white text-indigo-600 shadow-xs dark:bg-zinc-900 dark:text-white'
                     : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
@@ -363,6 +364,9 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                         strokeDasharray={strokeDasharray}
                         strokeDashoffset={strokeDashoffset}
                         className="transition-all duration-300 cursor-pointer"
+                        onClick={() =>
+                          setActiveCategory(activeCategory === item.category ? null : item.category)
+                        }
                         onMouseEnter={() => setActiveCategory(item.category)}
                         onMouseLeave={() => setActiveCategory(null)}
                       />
@@ -376,7 +380,7 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                   </span>
                   <span className="text-sm font-extrabold font-mono text-zinc-900 dark:text-white">
                     {getCurrencySymbol(selectedCurrency)}
-                    {Math.round(activeCurrencyTotals.totalOutofPocketOwed / 100).toLocaleString('en-IN')}
+                    {Math.round(activeCurrencyTotals.totalOutofPocketOwed / 100).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -391,6 +395,9 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                   return (
                     <div
                       key={item.category}
+                      onClick={() =>
+                        setActiveCategory(activeCategory === item.category ? null : item.category)
+                      }
                       onMouseEnter={() => setActiveCategory(item.category)}
                       onMouseLeave={() => setActiveCategory(null)}
                       className={`rounded-xl p-2 transition-all cursor-pointer ${
@@ -465,62 +472,113 @@ export function UserInsightsView({ user, onCreateGroup }: UserInsightsViewProps)
                     1
                   );
                   const chartHeight = 120;
-                  const chartWidth = Math.max(trends.length * 56, 280);
+                  const chartWidth = 320;
 
                   return (
-                    <div className="overflow-x-auto no-scrollbar pb-2">
-                      <svg
-                        width={chartWidth}
-                        height={chartHeight + 35}
-                        className="mx-auto block"
-                        viewBox={`0 0 ${chartWidth} ${chartHeight + 35}`}
-                      >
-                        {[0.25, 0.5, 0.75, 1.0].map((ratio) => {
-                          const y = chartHeight - chartHeight * ratio;
-                          return (
-                            <line
-                              key={ratio}
-                              x1="0"
-                              y1={y}
-                              x2={chartWidth}
-                              y2={y}
-                              stroke="currentColor"
-                              strokeDasharray="2 3"
-                              className="text-zinc-100 dark:text-zinc-800"
-                            />
-                          );
-                        })}
-
-                        {trends.map((trend, idx) => {
-                          const val = trend.byCurrency[selectedCurrency] || 0;
-                          const slotWidth = chartWidth / trends.length;
-                          const barWidth = Math.min(28, Math.floor(slotWidth * 0.55));
-                          const x = idx * slotWidth + (slotWidth - barWidth) / 2;
-                          const barHeight = Math.max(6, (val / maxMonthVal) * chartHeight);
-                          const y = chartHeight - barHeight;
-
-                          return (
-                            <g key={trend.month} className="cursor-pointer">
-                              <rect
-                                x={x}
-                                y={y}
-                                width={barWidth}
-                                height={barHeight}
-                                rx="4"
-                                className="fill-purple-500 dark:fill-purple-400 hover:fill-purple-400 transition-colors"
+                    <div>
+                      <div className="w-full pb-2">
+                        <svg
+                          width="100%"
+                          height={chartHeight + 35}
+                          className="w-full h-auto max-h-[160px] mx-auto block"
+                          viewBox={`0 0 ${chartWidth} ${chartHeight + 35}`}
+                        >
+                          {[0.25, 0.5, 0.75, 1.0].map((ratio) => {
+                            const y = chartHeight - chartHeight * ratio;
+                            return (
+                              <line
+                                key={ratio}
+                                x1="0"
+                                y1={y}
+                                x2={chartWidth}
+                                y2={y}
+                                stroke="currentColor"
+                                strokeDasharray="2 3"
+                                className="text-zinc-100 dark:text-zinc-800"
                               />
-                              <text
-                                x={x + barWidth / 2}
-                                y={chartHeight + 16}
-                                textAnchor="middle"
-                                className="text-[10px] fill-zinc-400 dark:fill-zinc-500 font-mono"
+                            );
+                          })}
+
+                          {trends.map((trend, idx) => {
+                            const val = trend.byCurrency[selectedCurrency] || 0;
+                            const slotWidth = chartWidth / trends.length;
+                            const barWidth = Math.min(28, Math.floor(slotWidth * 0.55));
+                            const x = idx * slotWidth + (slotWidth - barWidth) / 2;
+                            const barHeight = val > 0 ? Math.max(6, (val / maxMonthVal) * chartHeight) : 0;
+                            const y = chartHeight - barHeight;
+                            const isHovered = hoveredMonthIndex === idx;
+
+                            return (
+                              <g
+                                key={trend.month}
+                                className="cursor-pointer"
+                                onClick={() =>
+                                  setHoveredMonthIndex(hoveredMonthIndex === idx ? null : idx)
+                                }
+                                onMouseEnter={() => setHoveredMonthIndex(idx)}
+                                onMouseLeave={() => setHoveredMonthIndex(null)}
                               >
-                                {trend.label.split(' ')[0]}
-                              </text>
-                            </g>
-                          );
-                        })}
-                      </svg>
+                                <title>
+                                  {trend.label}: {formatMinorUnits(val, selectedCurrency)}
+                                </title>
+                                {/* Invisible wide tap target */}
+                                <rect
+                                  x={idx * slotWidth}
+                                  y="0"
+                                  width={slotWidth}
+                                  height={chartHeight + 30}
+                                  fill="transparent"
+                                />
+                                {barHeight > 0 && (
+                                  <rect
+                                    x={x}
+                                    y={y}
+                                    width={barWidth}
+                                    height={barHeight}
+                                    rx="4"
+                                    className={`transition-colors ${
+                                      isHovered
+                                        ? 'fill-purple-400 dark:fill-purple-300'
+                                        : 'fill-purple-500 dark:fill-purple-400'
+                                    }`}
+                                  />
+                                )}
+                                <text
+                                  x={x + barWidth / 2}
+                                  y={chartHeight + 16}
+                                  textAnchor="middle"
+                                  className={`text-[10px] font-mono ${
+                                    isHovered
+                                      ? 'fill-purple-600 dark:fill-purple-300 font-bold'
+                                      : 'fill-zinc-400 dark:fill-zinc-500'
+                                  }`}
+                                >
+                                  {trend.label.split(' ')[0]}
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+
+                      {/* Interactive Month Inspect Badge */}
+                      <div className="mt-2 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/40 flex items-center justify-between text-xs">
+                        {hoveredMonthIndex !== null && trends[hoveredMonthIndex] ? (
+                          <>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                              📅 {trends[hoveredMonthIndex].label}
+                            </span>
+                            <span className="font-bold font-mono text-purple-600 dark:text-purple-400">
+                              {formatMinorUnits(
+                                trends[hoveredMonthIndex].byCurrency[selectedCurrency] || 0,
+                                selectedCurrency
+                              )}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-zinc-400">Hover or tap bars to view monthly spending</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })()

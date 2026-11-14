@@ -449,10 +449,164 @@ describe('InsightsService', () => {
       expect(result.topPartners.length).toBeGreaterThan(0);
       const bob = result.topPartners.find((p) => p.displayName === 'Bob');
       expect(bob).toBeDefined();
+      expect(bob?.currency).toBe('INR');
       expect(bob?.mutualExpenseCount).toBe(1);
+
+      // Dave is in USD
+      const dave = result.topPartners.find((p) => p.displayName === 'Dave');
+      expect(dave).toBeDefined();
+      expect(dave?.currency).toBe('USD');
+      expect(dave?.netBalance).toBe(-2500); // Alice owes Dave $25.00
 
       // Check AI spending brief
       expect(result.aiSpendingBrief).toBeTruthy();
+    });
+
+    it('isolates split partner balances when sharing multiple groups in different currencies', async () => {
+      const gInr = 'g-inr';
+      const gUsd = 'g-usd';
+      const mAliceInr = 'm-alice-inr';
+      const mAliceUsd = 'm-alice-usd';
+      const mBobInr = 'm-bob-inr';
+      const mBobUsd = 'm-bob-usd';
+      const bobUserId = 'user-bob-global';
+
+      const mockSupabase = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'group_members') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockImplementation((col: string) => {
+                  if (col === 'user_id') {
+                    return Promise.resolve({
+                      data: [
+                        { id: mAliceInr, group_id: gInr },
+                        { id: mAliceUsd, group_id: gUsd },
+                      ],
+                      error: null,
+                    });
+                  }
+                  return Promise.resolve({ data: [], error: null });
+                }),
+                in: vi.fn().mockResolvedValue({
+                  data: [
+                    { id: mAliceInr, group_id: gInr, user_id: userId, display_name: 'Alice', is_placeholder: false },
+                    { id: mBobInr, group_id: gInr, user_id: bobUserId, display_name: 'Bob', is_placeholder: false },
+                    { id: mAliceUsd, group_id: gUsd, user_id: userId, display_name: 'Alice', is_placeholder: false },
+                    { id: mBobUsd, group_id: gUsd, user_id: bobUserId, display_name: 'Bob', is_placeholder: false },
+                  ],
+                  error: null,
+                }),
+              }),
+            };
+          }
+          if (table === 'groups') {
+            return {
+              select: vi.fn().mockReturnValue({
+                in: vi.fn().mockResolvedValue({
+                  data: [
+                    { id: gInr, name: 'INR Group', currency: 'INR' },
+                    { id: gUsd, name: 'USD Group', currency: 'USD' },
+                  ],
+                  error: null,
+                }),
+              }),
+            };
+          }
+          if (table === 'expenses') {
+            return {
+              select: vi.fn().mockReturnValue({
+                in: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    order: vi.fn().mockResolvedValue({
+                      data: [
+                        {
+                          id: 'e-inr',
+                          group_id: gInr,
+                          title: 'Dinner bill',
+                          description: null,
+                          amount: 100000, // ₹1,000.00
+                          currency: 'INR',
+                          expense_date: '2026-10-01T12:00:00Z',
+                          is_deleted: false,
+                        },
+                        {
+                          id: 'e-usd',
+                          group_id: gUsd,
+                          title: 'Hosting bill',
+                          description: null,
+                          amount: 4000, // $40.00
+                          currency: 'USD',
+                          expense_date: '2026-10-02T12:00:00Z',
+                          is_deleted: false,
+                        },
+                      ],
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'expense_payments') {
+            return {
+              select: vi.fn().mockReturnValue({
+                in: vi.fn().mockResolvedValue({
+                  data: [
+                    // Alice paid ₹1,000 in INR group
+                    { expense_id: 'e-inr', group_member_id: mAliceInr, amount_paid: 100000 },
+                    // Bob paid $40 in USD group
+                    { expense_id: 'e-usd', group_member_id: mBobUsd, amount_paid: 4000 },
+                  ],
+                  error: null,
+                }),
+              }),
+            };
+          }
+          if (table === 'expense_splits') {
+            return {
+              select: vi.fn().mockReturnValue({
+                in: vi.fn().mockResolvedValue({
+                  data: [
+                    // INR: Bob owes Alice ₹500
+                    { expense_id: 'e-inr', group_member_id: mAliceInr, owed_amount: 50000 },
+                    { expense_id: 'e-inr', group_member_id: mBobInr, owed_amount: 50000 },
+                    // USD: Alice owes Bob $20
+                    { expense_id: 'e-usd', group_member_id: mAliceUsd, owed_amount: 2000 },
+                    { expense_id: 'e-usd', group_member_id: mBobUsd, owed_amount: 2000 },
+                  ],
+                  error: null,
+                }),
+              }),
+            };
+          }
+          if (table === 'settlements') {
+            return {
+              select: vi.fn().mockReturnValue({
+                in: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {};
+        }),
+      } as unknown as SupabaseClient<Database>;
+
+      const service = new InsightsService(mockSupabase);
+      const result = await service.getOverallUserInsights(userId);
+
+      // Verify that Bob has two separate entries for INR and USD rather than corrupted sum
+      const bobInr = result.topPartners.find((p) => p.userId === bobUserId && p.currency === 'INR');
+      const bobUsd = result.topPartners.find((p) => p.userId === bobUserId && p.currency === 'USD');
+
+      expect(bobInr).toBeDefined();
+      expect(bobInr?.netBalance).toBe(50000); // Bob owes Alice ₹500.00
+      expect(bobInr?.currency).toBe('INR');
+
+      expect(bobUsd).toBeDefined();
+      expect(bobUsd?.netBalance).toBe(-2000); // Alice owes Bob $20.00
+      expect(bobUsd?.currency).toBe('USD');
     });
   });
 });

@@ -306,7 +306,7 @@ export function GroupInsightsView({
                 </span>
                 <span className="text-sm font-extrabold font-mono text-zinc-900 dark:text-white">
                   {getCurrencySymbol(data.currency)}
-                  {Math.round(data.totalSpend / 100).toLocaleString('en-IN')}
+                  {Math.round(data.totalSpend / 100).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -321,6 +321,9 @@ export function GroupInsightsView({
                 return (
                   <div
                     key={item.category}
+                    onClick={() =>
+                      setActiveCategory(activeCategory === item.category ? null : item.category)
+                    }
                     onMouseEnter={() => setActiveCategory(item.category)}
                     onMouseLeave={() => setActiveCategory(null)}
                     className={`rounded-xl p-2 transition-all cursor-pointer ${
@@ -397,14 +400,15 @@ export function GroupInsightsView({
                   const timeline = data.spendingTimeline;
                   const maxDayAmount = Math.max(...timeline.map((t) => t.totalAmount), 1);
                   const chartHeight = 120;
-                  const chartWidth = Math.max(timeline.length * 42, 280);
+                  const isMobileCompact = timeline.length <= 12;
+                  const chartWidth = isMobileCompact ? 360 : Math.max(timeline.length * 42, 280);
 
                   return (
-                    <div className="overflow-x-auto no-scrollbar pb-2">
+                    <div className={isMobileCompact ? "w-full pb-2" : "overflow-x-auto no-scrollbar pb-2"}>
                       <svg
-                        width={chartWidth}
+                        width={isMobileCompact ? "100%" : chartWidth}
                         height={chartHeight + 35}
-                        className="mx-auto block"
+                        className={isMobileCompact ? "w-full h-auto max-h-[160px] mx-auto block" : "mx-auto block"}
                         viewBox={`0 0 ${chartWidth} ${chartHeight + 35}`}
                       >
                         {/* Horizontal Guides */}
@@ -438,10 +442,13 @@ export function GroupInsightsView({
                             <g
                               key={point.date}
                               className="cursor-pointer transition-all"
+                              onClick={() =>
+                                setHoveredTimelineIndex(hoveredTimelineIndex === idx ? null : idx)
+                              }
                               onMouseEnter={() => setHoveredTimelineIndex(idx)}
                               onMouseLeave={() => setHoveredTimelineIndex(null)}
                             >
-                              {/* Hover Highlight Area */}
+                              {/* Hover / Tap Highlight Area */}
                               <rect
                                 x={idx * slotWidth}
                                 y="0"
@@ -579,7 +586,9 @@ export function GroupInsightsView({
                         Owes {formatMinorUnits(Math.abs(member.netBalance), data.currency)}
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold text-zinc-400">Settled (₹0.00)</span>
+                      <span className="text-xs font-semibold text-zinc-400">
+                        Settled ({formatMinorUnits(0, data.currency)})
+                      </span>
                     )}
                   </div>
                 </div>
