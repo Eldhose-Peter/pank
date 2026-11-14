@@ -149,6 +149,20 @@ describe('Integration: AI Chat Guardrails Route (/api/groups/[groupId]/ai/chat)'
     expect(askAssistantMock).not.toHaveBeenCalled();
   });
 
+  it('rejects malformed JSON body with 400 Bad Request', async () => {
+    const req = new Request(`http://localhost:3000/api/groups/${groupId}/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'invalid-json-{',
+    });
+    const res = await POST(req, { params: Promise.resolve({ groupId }) });
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe('Invalid JSON body');
+    expect(askAssistantMock).not.toHaveBeenCalled();
+  });
+
   it('processes legitimate group financial query successfully with 200 OK', async () => {
     const req = createRequest({
       query: 'Who owes the most in this group?',
@@ -169,5 +183,23 @@ describe('Integration: AI Chat Guardrails Route (/api/groups/[groupId]/ai/chat)'
       'existing-session-456',
       'Who owes the most in this group?'
     );
+  });
+
+  it('allows valid queries containing words like import fees or settlements with 200 OK', async () => {
+    const queries = [
+      'Who paid the import fees for our order?',
+      'How to implement settlements between us?',
+      'How much did we spend on the function (party)?',
+      'What is the capital of our group fund?',
+    ];
+
+    for (const q of queries) {
+      askAssistantMock.mockClear();
+      const req = createRequest({ query: q });
+      const res = await POST(req, { params: Promise.resolve({ groupId }) });
+
+      expect(res.status).toBe(200);
+      expect(askAssistantMock).toHaveBeenCalledTimes(1);
+    }
   });
 });

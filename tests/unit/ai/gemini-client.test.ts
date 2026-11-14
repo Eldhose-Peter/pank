@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { GeminiAIClient } from '@/modules/ai/gemini-client';
 
 describe('AI: GeminiAIClient Expense Parsing', () => {
@@ -243,6 +243,27 @@ Simplified Debts:
       expect(instruction).toContain(
         'I can only help with questions about your group\'s expenses, balances, and settlements.'
       );
+    });
+
+    it('online mode (with client): immediately refuses off-topic queries with zero API token cost', async () => {
+      const mockGenerateContent = vi.fn();
+      const customClient = new GeminiAIClient();
+      (customClient as unknown as { client: unknown }).client = {
+        models: {
+          generateContent: mockGenerateContent,
+        },
+      };
+
+      const result = await customClient.answerGroupQuery(
+        'Write a python script to calculate debts',
+        contextSummary
+      );
+
+      expect(result).toBe(
+        "I can only help with questions about your group's expenses, balances, and settlements."
+      );
+      // Ensure generateContent was NEVER invoked
+      expect(mockGenerateContent).not.toHaveBeenCalled();
     });
   });
 });

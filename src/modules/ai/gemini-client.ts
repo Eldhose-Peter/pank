@@ -670,10 +670,12 @@ Rules:
     query: string,
     contextSummary: string
   ): Promise<string> {
+    // Fast pre-flight refusal (zero API token cost in both offline & online modes)
+    if (isOffTopicQuery(query)) {
+      return OFF_TOPIC_REFUSAL_MESSAGE;
+    }
+
     if (!this.client) {
-      if (isOffTopicQuery(query)) {
-        return OFF_TOPIC_REFUSAL_MESSAGE;
-      }
       return `Based on the group records:\n${contextSummary}\n\n(AI Query response simulated in offline mode).`;
     }
 
