@@ -188,7 +188,7 @@ export function GroupInsightsView({
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-white truncate">
             {formatMinorUnits(data.totalSpend, data.currency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
             Across {data.expenseCount} {data.expenseCount === 1 ? 'expense' : 'expenses'}
           </p>
         </div>
@@ -202,7 +202,7 @@ export function GroupInsightsView({
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-violet-600 dark:text-violet-400 truncate">
             {formatMinorUnits(data.userSpend.totalOwed, data.currency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
             {data.userSpend.owedPercentage}% of group spend
           </p>
         </div>
@@ -216,7 +216,7 @@ export function GroupInsightsView({
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-indigo-600 dark:text-indigo-400 truncate">
             {formatMinorUnits(data.userSpend.totalPaid, data.currency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
             {data.userSpend.paidPercentage}% floated upfront
           </p>
         </div>
@@ -230,7 +230,7 @@ export function GroupInsightsView({
           <div className="mt-2 text-lg sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-white truncate">
             {formatMinorUnits(data.averageExpenseSize, data.currency)}
           </div>
-          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-400">Per recorded transaction</p>
+          <p className="mt-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">Per recorded transaction</p>
         </div>
       </div>
 
@@ -394,7 +394,7 @@ export function GroupInsightsView({
             {/* Responsive Native SVG Bar Chart */}
             <div className="mt-6 w-full">
               {data.spendingTimeline.length === 0 ? (
-                <div className="py-12 text-center text-xs text-zinc-400">No dates recorded yet.</div>
+                <div className="py-12 text-center text-xs text-zinc-500 dark:text-zinc-400">No dates recorded yet.</div>
               ) : (
                 (() => {
                   const timeline = data.spendingTimeline;
@@ -586,7 +586,7 @@ export function GroupInsightsView({
                         Owes {formatMinorUnits(Math.abs(member.netBalance), data.currency)}
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold text-zinc-400">
+                      <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                         Settled ({formatMinorUnits(0, data.currency)})
                       </span>
                     )}

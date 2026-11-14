@@ -284,7 +284,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
                       <span className="inline-flex items-center rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold font-mono text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
                         {group.currency}
                       </span>
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-50 group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:bg-zinc-800 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400 text-zinc-400 transition-colors">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-50 group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:bg-zinc-800 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400 text-zinc-500 dark:text-zinc-400 transition-colors">
                         <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                       </div>
                     </div>
@@ -303,7 +303,7 @@ export function UserDashboard({ user, initialGroups }: UserDashboardProps) {
                     )}
                   </div>
 
-                  <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-zinc-200/80 pt-3.5 sm:pt-4 text-xs text-zinc-500 dark:border-zinc-800">
+                  <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-zinc-200/80 pt-3.5 sm:pt-4 text-xs text-zinc-500 dark:text-zinc-400 dark:border-zinc-800">
                     <span className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                       View Ledger & Splits

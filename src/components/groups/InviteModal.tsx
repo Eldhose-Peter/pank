@@ -73,7 +73,7 @@ export function InviteModal({ isOpen, onClose, groupId }: InviteModalProps) {
           <div className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
         </div>
 
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 shadow-sm shadow-purple-500/10 dark:bg-purple-950 dark:text-purple-400">
               <Share2 className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -130,7 +130,7 @@ export function InviteModal({ isOpen, onClose, groupId }: InviteModalProps) {
             </button>
           ) : (
             <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Shareable Link (Valid for 7 days)
               </label>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -162,7 +162,7 @@ export function InviteModal({ isOpen, onClose, groupId }: InviteModalProps) {
         </div>
 
         {/* Modal Footer with Safe Area Support */}
-        <div className="flex items-center justify-end border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+        <div className="flex items-center justify-end border-t border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
           <button
             type="button"
             onClick={onClose}

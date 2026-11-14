@@ -598,9 +598,9 @@ export function GroupDetailClient({
                         <h4 className="hidden sm:block text-base font-bold text-zinc-900 dark:text-white">
                           {expense.title}
                         </h4>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-zinc-500">
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                           <span className="flex items-center gap-1 font-medium">
-                            <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                            <Calendar className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                             {expense.expenseDate}
                           </span>
                           <span>•</span>
@@ -615,12 +615,12 @@ export function GroupDetailClient({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 pt-2 sm:pt-0 border-t border-zinc-100 sm:border-t-0 dark:border-zinc-800/60">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 pt-2 sm:pt-0 border-t border-zinc-200/80 sm:border-t-0 dark:border-zinc-800/60">
                       <div className="text-left sm:text-right">
                         <div className="hidden sm:block text-lg font-bold font-mono text-zinc-900 dark:text-white">
                           {formatMinorUnits(expense.amount, expense.currency)}
                         </div>
-                        <div className="text-xs text-zinc-400">
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
                           {expense.splits.length} {expense.splits.length === 1 ? 'participant' : 'participants'}
                         </div>
                       </div>

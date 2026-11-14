@@ -125,7 +125,7 @@ export function GroupAssistantModal({
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-500/20">
               <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -192,7 +192,7 @@ export function GroupAssistantModal({
         </div>
 
         {/* Quick prompt suggestions */}
-        <div className="px-4 sm:px-6 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-950/40 shrink-0">
+        <div className="px-4 sm:px-6 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-950/40 shrink-0">
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
             {quickQuestions.map((q, idx) => (
               <button
@@ -214,7 +214,7 @@ export function GroupAssistantModal({
             e.preventDefault();
             handleSend();
           }}
-          className="p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pb-4 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center gap-2.5 shrink-0"
+          className="p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pb-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center gap-2.5 shrink-0"
         >
           <input
             type="text"
@@ -223,7 +223,7 @@ export function GroupAssistantModal({
             placeholder="Ask anything about balances, debts..."
             disabled={loading}
             maxLength={300}
-            className="flex-1 min-h-[44px] rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 sm:px-4 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all"
+            className="flex-1 min-h-[44px] rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 sm:px-4 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all"
           />
           <button
             type="submit"

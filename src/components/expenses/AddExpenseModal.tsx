@@ -212,7 +212,7 @@ export function AddExpenseModal({
         </div>
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/10 dark:bg-indigo-950 dark:text-indigo-400">
               <Receipt className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -255,7 +255,7 @@ export function AddExpenseModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Dinner, Groceries, Hotel booking"
-                className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white transition-all"
+                className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white transition-all"
               />
             </div>
 
@@ -265,7 +265,7 @@ export function AddExpenseModal({
                   Amount ({currencySymbol}) *
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-semibold text-zinc-400">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-semibold text-zinc-400 dark:text-zinc-500">
                     {currencySymbol}
                   </span>
                   <input
@@ -276,7 +276,7 @@ export function AddExpenseModal({
                     value={amountInput}
                     onChange={(e) => setAmountInput(e.target.value)}
                     placeholder="0.00"
-                    className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-8 pr-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                    className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-8 pr-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
                   />
                 </div>
               </div>
@@ -377,7 +377,7 @@ export function AddExpenseModal({
                         <div className="flex items-center justify-end gap-2 pl-7 min-[380px]:pl-0">
                           {splitType === 'exact' && (
                             <div className="relative">
-                              <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-xs text-zinc-400">
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-xs text-zinc-400 dark:text-zinc-500">
                                 {currencySymbol}
                               </span>
                               <input
@@ -387,7 +387,7 @@ export function AddExpenseModal({
                                 value={customValues[m.id] || ''}
                                 onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
                                 placeholder="0.00"
-                                className="w-24 min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-6 pr-2 py-2 text-base sm:text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                                className="w-24 min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-6 pr-2 py-2 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
                               />
                             </div>
                           )}
@@ -402,9 +402,9 @@ export function AddExpenseModal({
                                 value={customValues[m.id] || ''}
                                 onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
                                 placeholder="0"
-                                className="w-20 min-h-[44px] rounded-xl border border-zinc-300 bg-white px-2.5 py-2 text-base sm:text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
+                                className="w-20 min-h-[44px] rounded-xl border border-zinc-300 bg-white px-2.5 py-2 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono"
                               />
-                              <span className="text-xs text-zinc-500 ml-1">%</span>
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-1">%</span>
                             </div>
                           )}
 
@@ -417,9 +417,9 @@ export function AddExpenseModal({
                                 value={customValues[m.id] || '1'}
                                 onChange={(e) => handleCustomValueChange(m.id, e.target.value)}
                                 placeholder="1"
-                                className="w-16 min-h-[44px] rounded-xl border border-zinc-300 bg-white px-2 py-2 text-base sm:text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono text-center"
+                                className="w-16 min-h-[44px] rounded-xl border border-zinc-300 bg-white px-2 py-2 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono text-center"
                               />
-                              <span className="text-xs text-zinc-500">share</span>
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400">share</span>
                             </div>
                           )}
 
@@ -493,7 +493,7 @@ export function AddExpenseModal({
         </div>
 
         {/* Modal Footer with Safe Area Support */}
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
           <button
             type="button"
             onClick={onClose}

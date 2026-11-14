@@ -490,7 +490,7 @@ export function AiExpenseModal({
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-50/70 dark:bg-zinc-900/60 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-50/70 dark:bg-zinc-900/60 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-500/20">
               <Sparkles className="h-5 w-5" />
@@ -745,7 +745,7 @@ export function AiExpenseModal({
                     />
 
                     {/* Bottom Action Bar */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/70 p-2.5 gap-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/70 p-2.5 gap-2.5">
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* Voice Mic Button */}
                         <button
@@ -870,7 +870,7 @@ export function AiExpenseModal({
 
                   {/* Quick Prompt Pills */}
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-[11px] font-medium text-zinc-400">Try an example:</span>
+                    <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Try an example:</span>
                     <div className="flex flex-wrap gap-1.5">
                       {quickPrompts.map((p, idx) => (
                         <button
@@ -1062,14 +1062,14 @@ export function AiExpenseModal({
                       <div className="text-lg font-extrabold text-zinc-900 dark:text-white">
                         {formatMinorUnits(draft.amount, draft.currency)}
                       </div>
-                      <div className="text-[11px] text-zinc-400 capitalize">{draft.splitType} split</div>
+                      <div className="text-[11px] text-zinc-500 dark:text-zinc-400 capitalize">{draft.splitType} split</div>
                     </div>
                   </div>
                 )}
 
                 {/* Scanned Bill Line Items Breakdown (if present) */}
                 {draft.receiptItems && draft.receiptItems.length > 0 && (
-                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
                     <button
                       type="button"
                       onClick={() => setShowReceiptItems((prev) => !prev)}
@@ -1247,7 +1247,7 @@ export function AiExpenseModal({
                 </div>
 
                 {/* Individual Shares Breakdown */}
-                <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5">
+                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2.5">
                   <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider flex items-center justify-between">
                     <span>Individual Shares ({draft.splits.length} participants)</span>
                     <span>Exact Share</span>
@@ -1264,7 +1264,7 @@ export function AiExpenseModal({
                             </div>
                             <div>
                               <span className="font-semibold text-zinc-800 dark:text-zinc-200">{s.displayName}</span>
-                              <span className="ml-2 text-[10px] text-zinc-400 font-normal">({sharePercent}%)</span>
+                              <span className="ml-2 text-[10px] text-zinc-500 dark:text-zinc-400 font-normal">({sharePercent}%)</span>
                             </div>
                           </div>
                           <span className="font-bold text-zinc-900 dark:text-white">
@@ -1281,7 +1281,7 @@ export function AiExpenseModal({
         </div>
 
         {/* Modal Footer with Safe Area Support */}
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
           <button
             type="button"
             onClick={handleDiscard}

@@ -22,37 +22,53 @@ function getSystemPreference(): ResolvedTheme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function resolveTheme(targetTheme: Theme): ResolvedTheme {
+  if (targetTheme === 'system') {
+    return getSystemPreference();
+  }
+  return targetTheme;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
   const [mounted, setMounted] = useState(false);
 
-  // Read stored preference once mounted
+  // Initialize theme from localStorage synchronously on mount
   useEffect(() => {
+    const root = document.documentElement;
+    let initialTheme: Theme = 'system';
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
       if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        setThemeState(stored);
+        initialTheme = stored;
       }
     } catch {
       // localStorage may be disabled or restricted
     }
+
+    const initialResolved = resolveTheme(initialTheme);
+    setThemeState(initialTheme);
+    setResolvedTheme(initialResolved);
     setMounted(true);
+
+    // Apply class matching the initial resolved theme without intermediate flash
+    if (initialResolved === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
   }, []);
 
-  // Update resolvedTheme and documentElement class
+  // Handle subsequent theme updates and system preference changes
   useEffect(() => {
+    if (!mounted) return;
+
     const root = document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = () => {
-      let resolved: ResolvedTheme;
-      if (theme === 'system') {
-        resolved = mediaQuery.matches ? 'dark' : 'light';
-      } else {
-        resolved = theme;
-      }
-
+      const resolved = resolveTheme(theme);
       setResolvedTheme(resolved);
 
       if (resolved === 'dark') {
@@ -77,6 +93,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const val = e.newValue as Theme | null;
         if (val === 'light' || val === 'dark' || val === 'system') {
           setThemeState(val);
+        } else if (val === null) {
+          setThemeState('system');
         }
       }
     };
@@ -87,7 +105,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       mediaQuery.removeEventListener('change', handleSystemChange);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [theme]);
+  }, [theme, mounted]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
@@ -97,14 +115,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    // If currently dark, switch to light. If currently light, switch to dark.
     setThemeState((current) => {
-      let currentResolved: ResolvedTheme;
-      if (current === 'system') {
-        currentResolved = getSystemPreference();
-      } else {
-        currentResolved = current;
-      }
+      const currentResolved = resolveTheme(current);
       const nextTheme: Theme = currentResolved === 'dark' ? 'light' : 'dark';
       try {
         localStorage.setItem(STORAGE_KEY, nextTheme);

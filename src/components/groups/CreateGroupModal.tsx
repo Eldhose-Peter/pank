@@ -84,7 +84,7 @@ export function CreateGroupModal({ isOpen, onClose, initialName = '', onCreated 
           <div className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
         </div>
 
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
           <div>
             <h3 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
               Create New Group
@@ -155,7 +155,7 @@ export function CreateGroupModal({ isOpen, onClose, initialName = '', onCreated 
                 <option value="CAD">CAD ($ - Canadian Dollar)</option>
                 <option value="AUD">AUD ($ - Australian Dollar)</option>
               </select>
-              <p className="mt-1 text-[11px] text-zinc-400">
+              <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                 Deterministic accounting balances are calculated in the group's minor currency units.
               </p>
             </div>
@@ -163,7 +163,7 @@ export function CreateGroupModal({ isOpen, onClose, initialName = '', onCreated 
         </div>
 
         {/* Modal Footer with Safe Area Support */}
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
           <button
             type="button"
             onClick={onClose}

@@ -79,7 +79,7 @@ export function AddMemberModal({
           <div className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
         </div>
 
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/10 dark:bg-indigo-950 dark:text-indigo-400">
               <UserPlus className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -132,7 +132,7 @@ export function AddMemberModal({
         </div>
 
         {/* Modal Footer with Safe Area Support */}
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
           <button
             type="button"
             onClick={onClose}

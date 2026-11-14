@@ -127,7 +127,7 @@ export function SettleUpModal({
           <div className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
         </div>
 
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 sm:px-6 py-3.5 sm:py-4 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-500/10 dark:bg-emerald-950 dark:text-emerald-400">
               <Handshake className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -200,7 +200,7 @@ export function SettleUpModal({
                 Amount ({currencySymbol}) *
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-bold text-zinc-400">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-bold text-zinc-400 dark:text-zinc-500">
                   {currencySymbol}
                 </span>
                 <input
@@ -211,7 +211,7 @@ export function SettleUpModal({
                   value={amountInput}
                   onChange={(e) => setAmountInput(e.target.value)}
                   placeholder="0.00"
-                  className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-8 pr-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono font-bold transition-all"
+                  className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white pl-8 pr-3.5 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white font-mono font-bold transition-all"
                 />
               </div>
             </div>
@@ -225,7 +225,7 @@ export function SettleUpModal({
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 placeholder="e.g. UPI (GPay/PhonePe), Cash, NetBanking"
-                className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white transition-all"
+                className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white transition-all"
               />
             </div>
 
@@ -238,14 +238,14 @@ export function SettleUpModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. Cleared bill portion"
-                className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white transition-all"
+                className="block w-full min-h-[44px] rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white transition-all"
               />
             </div>
           </form>
         </div>
 
         {/* Modal Footer with Safe Area Support */}
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 bg-white dark:bg-zinc-900 shrink-0">
           <button
             type="button"
             onClick={onClose}

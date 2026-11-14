@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Sun, Moon, Laptop, Check } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
@@ -14,17 +14,36 @@ export function ThemeToggle({ className = '', showDropdown = false }: ThemeToggl
   const [menuOpen, setMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Close dropdown on outside click or Escape key
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && menuOpen) {
+        setMenuOpen(false);
+      }
+    }
+
     if (menuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
     }
   }, [menuOpen]);
+
+  const handleButtonClick = useCallback(() => {
+    if (showDropdown) {
+      setMenuOpen((prev) => !prev);
+    } else {
+      toggleTheme();
+    }
+  }, [showDropdown, toggleTheme]);
 
   // Avoid hydration mismatch by rendering a stable placeholder until mounted
   if (!mounted) {
@@ -44,14 +63,28 @@ export function ThemeToggle({ className = '', showDropdown = false }: ThemeToggl
     <div className="relative inline-flex items-center" ref={containerRef}>
       <button
         type="button"
-        onClick={toggleTheme}
+        onClick={handleButtonClick}
         onContextMenu={(e) => {
           e.preventDefault();
           setMenuOpen((prev) => !prev);
         }}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-label={
+          showDropdown
+            ? `Select theme (currently ${theme})`
+            : isDark
+            ? 'Switch to light mode'
+            : 'Switch to dark mode'
+        }
+        title={
+          showDropdown
+            ? `Theme options (current: ${theme})`
+            : isDark
+            ? 'Switch to light mode (Right-click for options)'
+            : 'Switch to dark mode (Right-click for options)'
+        }
         className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white active:scale-[0.96] transition-all cursor-pointer shadow-2xs ${className}`}
-        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        title={isDark ? 'Switch to light mode (Right-click for options)' : 'Switch to dark mode (Right-click for options)'}
       >
         {isDark ? (
           <Sun className="h-4 w-4 sm:h-[18px] sm:w-[18px] text-amber-400 transition-transform duration-300 hover:rotate-45" />
@@ -61,8 +94,13 @@ export function ThemeToggle({ className = '', showDropdown = false }: ThemeToggl
       </button>
 
       {menuOpen && (
-        <div className="absolute right-0 top-full mt-2 w-36 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 z-50 animate-scale-check text-xs">
+        <div
+          role="menu"
+          aria-label="Theme options"
+          className="absolute right-0 top-full mt-2 w-36 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 z-50 animate-scale-check text-xs"
+        >
           <button
+            role="menuitem"
             type="button"
             onClick={() => {
               setTheme('light');
@@ -82,6 +120,7 @@ export function ThemeToggle({ className = '', showDropdown = false }: ThemeToggl
           </button>
 
           <button
+            role="menuitem"
             type="button"
             onClick={() => {
               setTheme('dark');
@@ -101,6 +140,7 @@ export function ThemeToggle({ className = '', showDropdown = false }: ThemeToggl
           </button>
 
           <button
+            role="menuitem"
             type="button"
             onClick={() => {
               setTheme('system');
