@@ -22,7 +22,8 @@ import {
   ArrowRight,
   TrendingUp,
   CreditCard,
-  Layers
+  Layers,
+  BarChart3
 } from 'lucide-react';
 import { formatMinorUnits, getCurrencySymbol } from '@/lib/utils';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
@@ -31,6 +32,7 @@ import { AddMemberModal } from '@/components/groups/AddMemberModal';
 import { InviteModal } from '@/components/groups/InviteModal';
 import { AiExpenseModal } from '@/components/ai/AiExpenseModal';
 import { GroupAssistantModal } from '@/components/ai/GroupAssistantModal';
+import { GroupInsightsView } from '@/components/groups/GroupInsightsView';
 import { useToast } from '@/components/ui/Toast';
 import { ShadowPulseDot } from '@/components/ui/ShadowLoader';
 
@@ -141,8 +143,8 @@ export function GroupDetailClient({
   const [settlements, setSettlements] = useState<SettlementItem[]>(initialSettlements);
   const [loadingExtras, setLoadingExtras] = useState(!initialBalances);
 
-  // Active Tab: 'expenses' | 'balances' | 'settlements' | 'members'
-  const [activeTab, setActiveTab] = useState<'expenses' | 'balances' | 'settlements' | 'members'>('expenses');
+  // Active Tab: 'expenses' | 'balances' | 'insights' | 'settlements' | 'members'
+  const [activeTab, setActiveTab] = useState<'expenses' | 'balances' | 'insights' | 'settlements' | 'members'>('expenses');
   
   // Expanded expense items
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
@@ -468,6 +470,18 @@ export function GroupDetailClient({
                 {balances?.simplifiedDebts.length}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('insights')}
+            className={`flex min-h-[44px] items-center gap-2 border-b-2 px-2 sm:px-1 pb-3 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'insights'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-200'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Insights</span>
           </button>
 
           <button
@@ -866,6 +880,16 @@ export function GroupDetailClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB: INSIGHTS */}
+      {activeTab === 'insights' && (
+        <GroupInsightsView
+          groupId={groupId}
+          currency={group.currency}
+          currentUserId={currentUserId}
+          onAddExpense={() => setIsAddExpenseOpen(true)}
+        />
       )}
 
       {/* TAB 3: SETTLEMENTS */}
